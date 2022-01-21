@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+# Cleanup data if pipeline run multiple times
+rm -f "${PIPELINE_FEED_DIR}"/brazil.geojson
+
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
+
+latest_dir=$(GetLatestDirectory 's3/zenysis-br-covid/gis' 'brazil.shp')
+
+FetchFiles "${latest_dir}/brazil*" .
+
+popd &> /dev/null

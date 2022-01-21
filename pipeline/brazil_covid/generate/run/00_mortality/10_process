@@ -1,0 +1,7 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+${PIPELINE_BIN_DIR}/mortality/fetch_mortality.py \
+  --token_file "${PIPELINE_TMP_DIR}/token.json" \
+  --output_file "${PIPELINE_OUT_DIR}/output.json.gz"

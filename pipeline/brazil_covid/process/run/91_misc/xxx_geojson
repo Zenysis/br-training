@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+set -o pipefail
+
+# NOTE(stephen): This step is temporarily disabled because IT IS SO INCREDIBLY
+# SLOW. It takes like 35 minutes to run on the AWS pipeline machine. It's not
+# necessary to build this every pipeline run, but normally we leave it on
+# because the cost is minimal. Not in Brazil, unfortunately.
+
+# We want this geojson step to output its data as if it were part of the
+# GIS source step
+GIS_TMP_DIR="${PIPELINE_OUT_ROOT}/tmp/gis/${PIPELINE_DATE}"
+GIS_OUT_DIR="${PIPELINE_OUT_ROOT}/out/gis/${PIPELINE_DATE}"
+
+"${PIPELINE_SRC_ROOT}/data/pipeline/gis/scripts/store_canonical_locations.py" \
+  --input_geojson_file="${GIS_TMP_DIR}/brazil.geojson" \
+  --location_mapping="${GIS_OUT_DIR}/mapped_locations.csv" \
+  --output_file="${GIS_OUT_DIR}/brazil.geojson"

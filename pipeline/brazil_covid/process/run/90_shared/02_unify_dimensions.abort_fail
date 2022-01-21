@@ -1,0 +1,36 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+STEP='unify_dimensions'
+SOURCES=$("${PIPELINE_SRC_ROOT}/data/pipeline/scripts/generate_pipeline_sources.py" ${STEP})
+
+MAPPINGS_DIR="${PIPELINE_BIN_DIR}/../static_data/mappings"
+
+"${PIPELINE_SRC_ROOT}/data/pipeline/scripts/unify_dimensions.py" \
+  --canonical_mapping \
+    "RegionName:${MAPPINGS_DIR}/region_mapped.csv" \
+    "StateName:${MAPPINGS_DIR}/state_mapped.csv" \
+    "HealthRegionName:${MAPPINGS_DIR}/health_region_mapped.csv" \
+    "MunicipalityName:${MAPPINGS_DIR}/municipality_mapped.csv" \
+  --aggressive_search_dimension_levels 'covid:MunicipalityName' \
+  --ascii_match \
+  --input_basedir_pattern="${PIPELINE_OUT_ROOT}/tmp/#/${PIPELINE_DATE}" \
+  --output_basedir_pattern="${PIPELINE_OUT_ROOT}/out/#/${PIPELINE_DATE}" \
+  --output_matching_report="${PIPELINE_OUT_ROOT}/out/shared/${PIPELINE_DATE}/dimension_matching.csv" \
+  --sources ${SOURCES}
+
+# Sources that only have municipality code in their locations.csv file need to
+# have their original locations stored in the mapped_locations file. Otherwise,
+# the "fill dimension data" step will fail because it won't have a way to store
+# the canonical mapping result in a row.
+STEP='patch_locations'
+MUNICIPALITY_CODE_SOURCES=$("${PIPELINE_SRC_ROOT}/data/pipeline/scripts/generate_pipeline_sources.py" ${STEP})
+
+"${PIPELINE_BIN_DIR}/shared/patch_locations_csv.py" \
+  --unmatched_basedir_pattern="${PIPELINE_OUT_ROOT}/tmp/#/${PIPELINE_DATE}/locations.csv" \
+  --matched_basedir_pattern="${PIPELINE_OUT_ROOT}/out/#/${PIPELINE_DATE}/mapped_locations.csv" \
+  --sources ${MUNICIPALITY_CODE_SOURCES}

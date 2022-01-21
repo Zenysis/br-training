@@ -1,0 +1,35 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+# Remove old files if the pipeline is run multiple times.
+rm -f "${PIPELINE_TMP_DIR}"/{fields,locations,processed_data}*
+
+# Track background process IDs so that we can reliably capture exit code
+pids=()
+
+count=0
+for data_file in "${PIPELINE_FEED_DIR}"/covid_data.*.csv.lz4 ; do
+  filename=$(basename "${data_file}")
+  echo "*** Processing ${filename}"
+
+  "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
+      --date 'date' \
+      --rename_cols 'AgeGroups:AgeGroup' 'Date:date' 'key:field' 'value:val' \
+      --prefix 'covid' \
+      --sourcename 'COVID' \
+      --input="${data_file}" \
+      --output_locations="${PIPELINE_TMP_DIR}/locations_${count}.csv" \
+      --output_fields="${PIPELINE_TMP_DIR}/fields_${count}.csv" \
+      --output_rows="${PIPELINE_TMP_DIR}/processed_data_${count}.json.lz4" \
+    | TagLines "$(basename "${data_file}")" &
+  pids+=("$!")
+  count=$((count + 1))
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"

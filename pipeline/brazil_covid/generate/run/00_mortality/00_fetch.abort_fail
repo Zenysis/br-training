@@ -1,0 +1,8 @@
+#!/bin/bash -eu
+set -o pipefail
+
+# Run the scrape synchronously
+curl -X POST 'https://api.apify.com/v2/actor-tasks/zJKd2J2yPah4AjhQJ/run-sync?token=zyNYPsnk6aW5rxMmtsnWZtL88&ui=1'
+
+# Download the results
+curl 'https://api.apify.com/v2/actor-tasks/zJKd2J2yPah4AjhQJ/runs/last/dataset/items?token=zyNYPsnk6aW5rxMmtsnWZtL88' -o "${PIPELINE_TMP_DIR}/token.json"

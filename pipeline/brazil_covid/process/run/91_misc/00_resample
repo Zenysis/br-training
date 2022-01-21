@@ -1,0 +1,44 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+SOURCES=('corrections' 'population')
+
+# Track background process IDs so that we can reliably capture exit code
+pids=()
+
+for cur_source in "${SOURCES[@]}" ; do
+  source_tmp_dir="${PIPELINE_OUT_ROOT}/tmp/${cur_source}/${PIPELINE_DATE}"
+  source_out_dir="${PIPELINE_OUT_ROOT}/out/${cur_source}/${PIPELINE_DATE}"
+
+  # Move the non-resampled output files into a temporary directory since we need
+  # to replace them with the resampled version.
+  presampled_dir="${source_tmp_dir}/presampled_rows"
+  mkdir -p "${presampled_dir}"
+  rm -f "${presampled_dir}"/*.json.gz
+  mv "${source_out_dir}"/processed_rows.*.json.gz "${presampled_dir}"
+
+  # NOTE(stephen): The corrections dataset needs to be extended until the end of
+  # the year and not just to the current date.
+  last_date=$(date '+%Y-%m-%d')
+  if [[ "${cur_source}" == 'corrections' ]] ; then
+    last_date='2020-12-31'
+  fi
+
+  "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/resample_fields.py" \
+      --date_field 'Real_Date' \
+      --last_date "${last_date}" \
+      --shard_size 5000000 \
+      --fields_file "${source_tmp_dir}/fields.csv" \
+      --input_file_pattern "${presampled_dir}/processed_rows.#.json.gz" \
+      --output_file_pattern "${source_out_dir}/processed_rows.#.json.gz" \
+    | TagLines "${cur_source}" &
+  pids+=("$!")
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"

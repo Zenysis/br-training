@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
+
+rm -rf "${PIPELINE_FEED_DIR}"/*
+
+FetchFiles "gcs/zenysis-br/SINAN/dataprep_output.csv.gz" .
+
+gunzip -c 'dataprep_output.csv.gz' | python -c 'import sys; sys.stdout.write(sys.stdin.read().replace("\0", ""))' | gzip > dataprep_output_without_nulls.csv.gz
+rm dataprep_output.csv.gz
+
+popd &> /dev/null

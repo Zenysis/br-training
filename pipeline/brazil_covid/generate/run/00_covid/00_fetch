@@ -1,0 +1,29 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+STATES=(
+  'ac' 'al' 'ap' 'am' 'ba' 'ce' 'df' 'es' 'go' 'ma' 'mt' 'ms' 'mg' 'pa' 'pb'
+  'pr' 'pe' 'pi' 'rj' 'rn' 'rs' 'ro' 'rr' 'sc' 'sp' 'se' 'to'
+)
+
+rm -f "${PIPELINE_FEED_DIR}"/state_*
+
+# Track background process IDs so that we can reliably capture exit code
+pids=()
+
+for state in "${STATES[@]}"; do
+  filename="state_${state}.csv"
+  (curl "http://ckan.saude.gov.br.s3.amazonaws.com/dados-${state}.csv" \
+    | iconv -f ISO-8859-1 -t UTF-8//TRANSLIT \
+    | gzip \
+    > "${PIPELINE_FEED_DIR}/state_${state}.csv.gz") &
+  pids+=("$!")
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"
+
+cat "${PIPELINE_FEED_DIR}"/state_*.csv.gz > "${PIPELINE_OUT_DIR}/covid.csv.gz"

@@ -1,0 +1,29 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+pushd "${PIPELINE_TMP_DIR}" &> /dev/null
+
+count=0
+for data_file in "${PIPELINE_FEED_DIR}"/*.csv.gz ; do
+  filename=$(basename "${data_file}")
+  echo "*** Processing ${filename}"
+
+  "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
+    --date 'date' \
+    --rename_cols 'key:field' \
+    --value 'value' \
+    --prefix 'confidence' \
+    --sourcename 'CI' \
+    --input="${data_file}" \
+    --output_locations="${PIPELINE_TMP_DIR}/locations_${count}.csv" \
+    --output_fields="${PIPELINE_TMP_DIR}/fields_${count}.csv" \
+    --output_rows="${PIPELINE_TMP_DIR}/processed_data_${count}.json.lz4"
+
+  count=$((count + 1))
+done
+
+popd &> /dev/null

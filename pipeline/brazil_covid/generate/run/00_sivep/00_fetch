@@ -1,0 +1,27 @@
+#!/bin/bash -eu
+set -o pipefail
+
+echo 'Finding the latest SIVEP 2021 csv'
+URL_2021=$(curl -ks 'https://opendatasus.saude.gov.br/dataset/bd-srag-2021' \
+  | grep -P 'href=".+?\.csv"' \
+  | perl -pe 's:.+href="(.+?)".*:$1:')
+
+echo "Fetching SIVEP 2021 data from URL: ${URL_2021}"
+curl -k -o "${PIPELINE_FEED_DIR}/sivep_2021.csv" "${URL_2021}"
+
+echo 'Finding the latest SIVEP 2020 csv'
+URL_2020=$(curl -ks 'https://opendatasus.saude.gov.br/dataset/bd-srag-2020' \
+  | grep -P 'href=".+?\.csv"' \
+  | perl -pe 's:.+href="(.+?)".*:$1:')
+
+echo "Fetching SIVEP 2020 data from URL: ${URL_2020}"
+curl -k -o "${PIPELINE_FEED_DIR}/sivep_2020.csv" "${URL_2020}"
+
+
+echo 'Finding the latest SIVEP 2019 csv'
+URL_2019=$(curl -ks 'https://opendatasus.saude.gov.br/dataset/bd-srag-2019' \
+  | grep -P 'href=".+?\.csv"' \
+  | perl -pe 's:.+href="(.+?)".*:$1:')
+
+echo "Fetching SIVEP 2019 data from URL: ${URL_2019}"
+curl -k -o "${PIPELINE_FEED_DIR}/sivep_2019.csv" "${URL_2019}"

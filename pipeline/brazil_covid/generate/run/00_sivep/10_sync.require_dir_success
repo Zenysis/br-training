@@ -1,0 +1,9 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+AssertMinDirectorySize "${PIPELINE_OUT_DIR}" '140000'
+
+# Sync entire directory to minio
+UploadDirectory "${PIPELINE_OUT_DIR}" 's3/zenysis-br-covid/sivep'

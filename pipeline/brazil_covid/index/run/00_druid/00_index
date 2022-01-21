@@ -1,0 +1,9 @@
+#!/bin/bash -eu
+set -o pipefail
+
+"${PIPELINE_SRC_ROOT}/db/druid/indexing/scripts/run_indexing.py" \
+  --data_files='/home/share/data/brazil_covid/*/current/processed_rows.*' \
+  --output_task_id_file="${PIPELINE_TMP_DIR}/task_id" \
+  --min_data_date='2009-01-01' \
+  --output_datasource_name_file="${PIPELINE_TMP_DIR}/datasource_name" \
+  --output_datasource_version_file="${PIPELINE_TMP_DIR}/datasource_version"

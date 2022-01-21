@@ -1,0 +1,8 @@
+#!/bin/bash -eu
+set -o pipefail
+
+"${PIPELINE_BIN_DIR}/sivep/merge_raw_datasets.py" \
+  --sivep_2019="${PIPELINE_FEED_DIR}/sivep_2019.csv" \
+  --sivep_2020="${PIPELINE_FEED_DIR}/sivep_2020.csv" \
+  --sivep_2021="${PIPELINE_FEED_DIR}/sivep_2021.csv" \
+  --output_file="${PIPELINE_OUT_DIR}/sivep.csv.gz"

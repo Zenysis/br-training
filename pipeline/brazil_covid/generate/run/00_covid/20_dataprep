@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+pushd ${PIPELINE_OUT_DIR} &> /dev/null
+
+if [ -f start_dataprep ]; then
+  # https://clouddataprep.com/flows/273289?recipe=1467397&tab=recipe&projectId=zen-1234
+  RunDataprepFlow '1467397'
+  echo 'Started dataprep'
+else
+  echo 'Skipping dataprep run'
+fi
+
+popd &> /dev/null

@@ -1,0 +1,21 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+# Ensure the data was fetched in full.
+AssertMinDirectorySize "${PIPELINE_OUT_DIR}" '800000'
+
+LOCAL_PATH="${PIPELINE_OUT_DIR}/covid.csv.gz"
+REMOTE_PATH='gcs/zenysis-br/covid/covid_latest.csv.gz'
+
+size_prev=$(mc ls --json "${REMOTE_PATH}" | jq .size)
+size_cur=$(mc ls --json "${LOCAL_PATH}" | jq .size)
+
+if [ "${size_prev}" -ne "${size_cur}" ]; then
+  mc cp "${LOCAL_PATH}" "${REMOTE_PATH}"
+  touch start_dataprep
+else
+  rm -f start_dataprep
+  echo 'Data sizes were the same, refusing to update'
+fi

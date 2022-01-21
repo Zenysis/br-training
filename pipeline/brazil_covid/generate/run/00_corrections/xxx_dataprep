@@ -1,0 +1,8 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+# https://clouddataprep.com/flows/277623?output=1516279&tab=results&projectId=zen-1234
+RunDataprepFlow '1516279'

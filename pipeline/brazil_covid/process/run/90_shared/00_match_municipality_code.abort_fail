@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+# Sources that only have municipality code in their locations.csv file.
+STEP='patch_locations'
+SOURCES=$("${PIPELINE_SRC_ROOT}/data/pipeline/scripts/generate_pipeline_sources.py" ${STEP})
+
+MAPPINGS_DIR="${PIPELINE_BIN_DIR}/../static_data/mappings"
+
+"${PIPELINE_BIN_DIR}/shared/match_municipality_code.py" \
+  --input_basedir_pattern="${PIPELINE_OUT_ROOT}/tmp/#/${PIPELINE_DATE}/locations.csv" \
+  --municipality_code_mapping_file="${MAPPINGS_DIR}/municipality_code_mapping.csv" \
+  --sources ${SOURCES}

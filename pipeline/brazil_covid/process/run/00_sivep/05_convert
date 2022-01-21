@@ -1,0 +1,7 @@
+#!/bin/bash -eu
+set -o pipefail
+
+"${PIPELINE_BIN_DIR}/sivep/convert_raw_sivep.py" \
+  --input_file="${PIPELINE_FEED_DIR}/sivep.csv.gz" \
+  --output_file="${PIPELINE_FEED_DIR}/sivep_converted.csv.lz4" \
+  --output_file_by_evaluation_date="${PIPELINE_FEED_DIR}/sivep_converted_evaluation_date_fields.csv.lz4"

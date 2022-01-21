@@ -1,0 +1,21 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+pushd ${PIPELINE_OUT_DIR} &> /dev/null
+
+LOCAL_PATH='output.json.gz'
+REMOTE_PATH='gcs/zenysis-br/mortality/mortality_latest.json.gz'
+
+size_prev=$(mc ls --json "${REMOTE_PATH}" | jq .size)
+size_cur=$(mc ls --json "${LOCAL_PATH}" | jq .size)
+
+if [ "${size_prev}" -ne "${size_cur}" ]; then
+  mc cp "${LOCAL_PATH}" "${REMOTE_PATH}"
+  touch start_dataprep
+else
+  rm -f start_dataprep
+  echo 'Data sizes were the same, refusing to update'
+fi
+
+popd &> /dev/null

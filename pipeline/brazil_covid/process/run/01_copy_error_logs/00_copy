@@ -1,0 +1,11 @@
+#!/bin/bash -eu
+set -o pipefail
+
+LOG_OUT_DIR="/home/share/data/brazil_covid/copy_error_logs/comparison_report"
+mkdir -p "${LOG_OUT_DIR}"
+
+LOG_DIR="${PIPELINE_OUT_ROOT}/log/${PIPELINE_DATE}"
+
+
+rsync -r "${LOG_DIR}" "${LOG_OUT_DIR}"
+

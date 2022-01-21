@@ -1,0 +1,33 @@
+Original shapes were provided in this task but they are in TabNet format and are unreadable on normal computers:
+https://phab.zenysis.com/T6725
+
+The IBGE (Brazil geographic institute) provides shapefiles in a much nicer format. I used the version here:
+ftp://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2019/Brasil/BR/br_municipios.zip
+
+Downlaod this file and extract it somewhere. Since this is a one-off task, I used mapshaper.org to convert it into a geojson file instead of using the builtin Shapefile processors we have. This geojson file doesn't have the full admin hierarchy property names, however it does have municipality code. So we need to use this code to lookup the full list of properties in the mapping file.
+
+The municipality_code_mapping.csv file was generated from tne DADOSMUNBR.xlsx file inside pandas:
+import pandas as pd
+df = pd.read_excel('...path_to_file')
+output_df = (
+    df[['NOMEREG', 'NOMEUF', 'NOMECIR', 'NOMEMUN', 'CODIGOMUN', 'CODIGOMUN7']]
+    .rename(columns={
+        'NOMEREG': 'RegionName',
+        'NOMEUF': 'StateName',
+        'NOMECIR': 'HealthRegionName',
+        'NOMEMUN': 'MunicipalityName',
+        'CODIGOMUN': 'MunicipalityCodeShort',
+        'CODIGOMUN7': 'MunicipalityCodeLong',
+      })
+      .sort_values([
+          'RegionName',
+          'StateName',
+          'HealthRegionName',
+          'MunicipalityName',
+      ])
+      .reset_index(drop=True)
+)
+
+output_df.to_csv('../../../static_data/mappings/municipality_code_mapping.csv', index=False)
+
+After building the geojson file, I used mapshaper.org to build a Shapefile so that I could use the normal generic pipeline utilities for working with shapefiles instead of building something special for BR.

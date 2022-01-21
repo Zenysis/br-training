@@ -1,0 +1,9 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+CSV_PATH="${PIPELINE_OUT_ROOT}/out/shared/${PIPELINE_DATE}/dimension_matching.csv"
+REMOTE_DESTINATION="s3/zenysis-br-covid/downloadable_files/match_report.csv"
+
+UploadFile "${CSV_PATH}" "${REMOTE_DESTINATION}"

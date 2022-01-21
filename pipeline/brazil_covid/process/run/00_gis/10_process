@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+"${PIPELINE_SRC_ROOT}/data/pipeline/gis/scripts/process_shapefiles.py" \
+  --rename_dimensions \
+    'HealthRegi:HealthRegionName' \
+    'Municipali:MunicipalityName' \
+  --base_shapefile_path="${PIPELINE_FEED_DIR}/brazil" \
+  --output_file="${PIPELINE_TMP_DIR}/brazil.geojson" \
+  --location_list="${PIPELINE_TMP_DIR}/locations.csv"

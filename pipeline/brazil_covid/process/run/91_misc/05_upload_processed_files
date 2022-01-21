@@ -1,0 +1,28 @@
+#!/bin/bash -eu
+# The platform offers direct downloads for processed data.
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+UPLOAD_FILE="${PIPELINE_TMP_DIR}/epi_data.csv"
+REMOTE_DESTINATION="s3/zenysis-br-covid-assets/public_downloads"
+
+SOURCES=('sivep' 'sinan' 'population' 'covid' 'mortality' 'confidence_interval' 'sim')
+
+pids=()
+for cur_source in "${SOURCES[@]}" ; do
+  source_out_dir="${PIPELINE_OUT_ROOT}/out/${cur_source}/${PIPELINE_DATE}"
+
+  # Put it all in one file...
+  combined_file="${PIPELINE_TMP_DIR}/${cur_source}.json.gz"
+  cat "${source_out_dir}/processed_rows"* > ${combined_file}
+
+  # Upload it
+  UploadFile "${combined_file}" "${REMOTE_DESTINATION}" &
+
+  pids+=("$!")
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"

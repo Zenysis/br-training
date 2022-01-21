@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+"${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
+  --rename_cols 'MunipalityCode:MunicipalityName' \
+  --date 'date' \
+  --value 'value' \
+  --prefix 'sim' \
+  --sourcename 'SIM' \
+  --input="${PIPELINE_FEED_DIR}/dataprep_output.csv.lz4" \
+  --output_locations="${PIPELINE_TMP_DIR}/locations.csv" \
+  --output_fields="${PIPELINE_TMP_DIR}/fields.csv" \
+  --output_rows="${PIPELINE_TMP_DIR}/processed_data.json.lz4"
