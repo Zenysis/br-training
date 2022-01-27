@@ -1,0 +1,13 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+pushd "${PIPELINE_TMP_DIR}" &> /dev/null
+
+# Combine each file's processed output.
+MergeDimensionsAndFields "${PIPELINE_TMP_DIR}"
+
+cat "${PIPELINE_TMP_DIR}"/processed_data_*.json.lz4 > "${PIPELINE_TMP_DIR}/processed_data.json.lz4"
+
+popd &> /dev/null

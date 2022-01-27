@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+
+"${PIPELINE_BIN_DIR}/sim/convert_cid_csv.py" \
+  --input_file="${PIPELINE_FEED_DIR}/cid10_flat.csv" \
+  --output_indicator_groups="${PIPELINE_FEED_DIR}/output_indicators.json" \
+  --cause_of_death_lookup="${PIPELINE_FEED_DIR}/output_cid.csv"

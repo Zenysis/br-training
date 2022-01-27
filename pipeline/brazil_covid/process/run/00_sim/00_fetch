@@ -3,21 +3,11 @@ set -o pipefail
 
 source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
-pushd "${PIPELINE_FEED_DIR}" &> /dev/null
-
+# Cleanup data if pipeline run multiple times.
 rm -rf "${PIPELINE_FEED_DIR}"/*
 
-FetchFiles "gcs/zenysis-br/SIM/dataprep_output.csv.gz" .
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
 
-mv dataprep_output.csv.gz dataprep_output_orig.csv.gz
-
-# HACK(stephen): Rewrite invalid municipality code mapping number that exists in
-# the raw SIM data to point to the correct number. This is easier than updating
-# the municipality code mapping step to handle it since that code doesn't expect
-# any invalid codes.
-gunzip -c dataprep_output_orig.csv.gz \
-  | perl -pe 's:"431453"$:"431454":' \
-  | lz4 -3 \
-  > dataprep_output.csv.lz4
+wget 'https://opendatasus.saude.gov.br/dataset/57c4b23e-6ffa-43ef-a1e7-23103f73f376/resource/da17c5f6-aa89-4e7d-b7e2-ec4b77a5dc31/download/do2021opendata.csv'
 
 popd &> /dev/null

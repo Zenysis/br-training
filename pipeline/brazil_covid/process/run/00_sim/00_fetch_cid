@@ -1,0 +1,11 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
+latest_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'cid10_flat.csv')
+
+FetchFiles "${latest_dir}/cid10_flat.csv" .
+
+popd &> /dev/null

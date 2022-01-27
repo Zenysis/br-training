@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+"${PIPELINE_SRC_ROOT}/data/pipeline/scripts/unroll.py" \
+  --input="${PIPELINE_TMP_DIR}/processed_data.json.lz4" \
+  --output="${PIPELINE_OUT_DIR}/processed_rows.json.gz"
