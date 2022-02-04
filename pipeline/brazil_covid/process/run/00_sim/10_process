@@ -9,7 +9,7 @@ SetupEnvForPyPy
   --date 'date' \
   --enable_field_wildcards \
   --prefix 'sim_residence_' \
-  --sourcename 'SIM' \
+  --sourcename 'sim' \
   --rename_cols \
     'RegionNameRes:RegionName' \
     'StateNameRes:StateName' \

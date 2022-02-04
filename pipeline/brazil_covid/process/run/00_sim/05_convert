@@ -2,7 +2,6 @@
 set -o pipefail
 
 "${PIPELINE_BIN_DIR}/sim/convert_raw_sim.py" \
-  --input_file="${PIPELINE_FEED_DIR}/DOBR2021.csv" \
+  --input_folder="${PIPELINE_FEED_DIR}" \
   --output_file="${PIPELINE_FEED_DIR}/sim_converted.csv.lz4" \
-  --municipality_code_mapping_file="${PIPELINE_BIN_DIR}/../static_data/mappings/municipality_code_mapping.csv" \
   --cause_of_death_codes_csv="${PIPELINE_FEED_DIR}/output_cid.csv"

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import sys
 
 import pandas as pd
@@ -6,9 +7,7 @@ import pandas as pd
 from pylib.base.flags import Flags
 
 from log import LOG
-from util.file.compression.lz4 import LZ4Writer
-
-INPUT_DATE_FORMAT = '%d%m%Y'
+from util.file.compression.lz4 import LZ4Reader, LZ4Writer
 
 ESC2010_COLUMN_MAPPING = {
     '0': 'Sem escolaridade',
@@ -105,7 +104,7 @@ COLUMN_MAPPING_VALUES = {
         '3': 'Homicídio',
         '4': 'Outros',
         '9': 'Ignorado',
-        '': '', # Not a violent death.
+        '': '',  # Not a violent death.
     },
     'FONTE': {
         '1': 'Ocorrência policial',
@@ -152,55 +151,118 @@ OCCURENCE_LOCATION_COLUMN_RENAME = {
     'MunicipalityName': 'MunicipalityNameOcor'
 }
 
-INPUT_DATE_COLUMN = 'DTOBITO'
+INPUT_DATE_COLUMN_BEFORE_1996 = 'DATAOBITO'
+INPUT_DATE_COLUMN_AFTER_1996 = 'DTOBITO'
 INPUT_MUNICIPALITY_RESIDENCE_COLUMN = 'CODMUNRES'
 INPUT_MUNICIPALITY_OCCURRENCE_COLUMN = 'CODMUNOCOR'
 INPUT_CAUSE_OF_DEATH_COLUMN = 'CAUSABAS'
 
-INPUT_REQUIRED_COLUMNS = [
-    INPUT_DATE_COLUMN,
+INPUT_REQUIRED_COLUMNS = {
+    INPUT_DATE_COLUMN_BEFORE_1996,
+    INPUT_DATE_COLUMN_AFTER_1996,
     INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
     INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
     INPUT_CAUSE_OF_DEATH_COLUMN,
     *COLUMN_MAPPING_VALUES.keys(),
-]
+}
 
-OUTPUT_CAUSE_OF_DEATH_FIELD = 'cause_of_death_field_id'
+OUTPUT_CAUSE_OF_DEATH_FIELD = 'cause_of_death'
 INPUT_CAUSE_OF_DEATH_FIELD = 'field_id'
+
 
 def main():
     Flags.PARSER.add_argument(
-        '--input_file', type=str, required=True, help='Raw SIM dataset to convert'
-    )
-    Flags.PARSER.add_argument(
-        '--municipality_code_mapping_file',
+        '--input_folder',
         type=str,
         required=True,
-        help='CSV file containing a mapping from municipality code to the full hierarchy'
+        help='Input folder with years of raw SIM files to convert',
     )
     Flags.PARSER.add_argument(
         '--output_file', type=str, required=True, help='Converted file location'
     )
     Flags.PARSER.add_argument(
-        '--cause_of_death_codes_csv', type=str, required=True, help='File path for cause of death codes to fields'
+        '--cause_of_death_codes_csv',
+        type=str,
+        required=True,
+        help='File path for cause of death codes to fields',
     )
     Flags.InitArgs()
 
-    LOG.info('Reading input file into dataframe')
-    df = pd.read_csv(
-        Flags.ARGS.input_file,
-        sep=';',
-        dtype=str,
-        keep_default_na=False,
-        usecols=INPUT_REQUIRED_COLUMNS
+    LOG.info('Reading in input files into dataframe')
+    df = pd.DataFrame()
+    for input_file_name in os.listdir(Flags.ARGS.input_folder):
+        if input_file_name.endswith('.csv.lz4'):
+            LOG.info('Processing file %s', input_file_name)
+            with LZ4Reader(
+                os.path.join(Flags.ARGS.input_folder, input_file_name)
+            ) as input_file:
+                input_df = pd.read_csv(
+                    input_file,
+                    sep=';',
+                    dtype=str,
+                    keep_default_na=False,
+                    usecols=lambda col: col in INPUT_REQUIRED_COLUMNS,
+                )
+                df = df.append(input_df, ignore_index=True)
+    LOG.info('Finished reading input files')
+
+    LOG.info('Number of rows in input: %s', len(df))
+
+    LOG.info('Beginning date parsing')
+    # After 1996, the date column is `DTOBITO` and typically the format is ddmmyyyy.
+    df['date'] = pd.to_datetime(
+        df.loc[~df[INPUT_DATE_COLUMN_AFTER_1996].isna(), INPUT_DATE_COLUMN_AFTER_1996],
+        format='%d%m%Y',
+        errors='coerce',
     )
-    LOG.info('Finished reading input file')
+    # If it wasn't in that format, then it was in ?mmyyyy, so assign those to the first of
+    # the month.
+    row_index = (~df[INPUT_DATE_COLUMN_AFTER_1996].isna()) & df['date'].isna()
+    df.loc[row_index, 'date'] = pd.to_datetime(
+        df.loc[row_index, INPUT_DATE_COLUMN_AFTER_1996].str[-6:],
+        format='%m%Y',
+        errors='coerce',
+    )
+    # If it wasn't in that format, then it was in ?yyyy, so assign those to the first of
+    # the year.
+    row_index = (~df[INPUT_DATE_COLUMN_AFTER_1996].isna()) & df['date'].isna()
+    df.loc[row_index, 'date'] = pd.to_datetime(
+        df.loc[row_index, INPUT_DATE_COLUMN_AFTER_1996].str[-4:],
+        format='%Y',
+        errors='coerce',
+    )
 
+    # Before 1996, the date column is `DATAOBITO` and typically the format is yymmdd.
+    row_index = (~df[INPUT_DATE_COLUMN_BEFORE_1996].isna()) & df['date'].isna()
+    df.loc[row_index, 'date'] = pd.to_datetime(
+        df.loc[row_index, INPUT_DATE_COLUMN_BEFORE_1996],
+        format='%y%m%d',
+        errors='coerce',
+    )
+    # If it wasn't in that format, then it was in yymm?, so assign those to the first of
+    # the month.
+    row_index = (~df[INPUT_DATE_COLUMN_BEFORE_1996].isna()) & df['date'].isna()
+    df.loc[row_index, 'date'] = pd.to_datetime(
+        df.loc[row_index, INPUT_DATE_COLUMN_BEFORE_1996].str[:4],
+        format='%y%m',
+        errors='coerce',
+    )
+    # If it wasn't in that format, then it was in yy?. Take the first two characters
+    # for the year and make it the first of the year.
+    row_index = (~df[INPUT_DATE_COLUMN_BEFORE_1996].isna()) & df['date'].isna()
+    df.loc[row_index, 'date'] = pd.to_datetime(
+        df.loc[row_index, INPUT_DATE_COLUMN_BEFORE_1996].str[:2],
+        format='%y',
+        errors='coerce',
+    )
+
+    # No rows should have been dropped, but log and filter just in case.
+    LOG.info(
+        'Number of rows dropped with invalid dates: %s', len(df[df['date'].isna()])
+    )
+    df = df[~df['date'].isna()]
     input_count = len(df)
-    LOG.info('Number of rows in input: %s', input_count)
-
-    # Convert the date column into a full date object using the input format.
-    df['date'] = pd.to_datetime(df[INPUT_DATE_COLUMN], format=INPUT_DATE_FORMAT)
+    LOG.info('Finished date parsing')
 
     LOG.info('Starting remapping column values to human readable strings')
     for column_name, mapping_values in COLUMN_MAPPING_VALUES.items():
@@ -249,18 +311,32 @@ def main():
     cause_of_death_df = pd.concat([cause_of_death_df, shortened_df])
 
     LOG.info(cause_of_death_df.head(10))
-    df[INPUT_CAUSE_OF_DEATH_COLUMN] = [s.lower() for s in df[INPUT_CAUSE_OF_DEATH_COLUMN]]
+    df[INPUT_CAUSE_OF_DEATH_COLUMN] = [
+        s.lower() for s in df[INPUT_CAUSE_OF_DEATH_COLUMN]
+    ]
     LOG.info(df[INPUT_CAUSE_OF_DEATH_COLUMN].unique())
-    
-    df = (df
-        .merge(cause_of_death_df, left_on=INPUT_CAUSE_OF_DEATH_COLUMN, right_on='cid_id')
+
+    df = (
+        df.merge(
+            cause_of_death_df,
+            left_on=INPUT_CAUSE_OF_DEATH_COLUMN,
+            right_on='cid_id',
+            how='left',
+        )
         .rename(columns={INPUT_CAUSE_OF_DEATH_FIELD: OUTPUT_CAUSE_OF_DEATH_FIELD})
         .drop(columns=['cid_id', INPUT_CAUSE_OF_DEATH_COLUMN])
     )
+    # HACK(abby): Older years use the cause of death codes differently. Temporarily use
+    # 'unknown' for those rows so they aren't dropped until this can be addressed.
+    df.loc[
+        df[OUTPUT_CAUSE_OF_DEATH_FIELD].isna(), OUTPUT_CAUSE_OF_DEATH_FIELD
+    ] = 'ignorado'
     after_merge_count = len(df)
-    assert input_count == after_merge_count, \
-        'Some rows were dropped after cause of death code merging! Original rows: %s, New rows: %s' % (input_count, after_merge_count)
-
+    assert input_count == after_merge_count, (
+        'Some rows were dropped after cause of death code merging! Original rows: %s, New rows: %s'
+        % (input_count, after_merge_count)
+    )
+    LOG.info('Finished processing cause of death')
 
     LOG.info('Building numeric field columns')
     # Build a unique numeric field for each dimension value in all the columns that we care
@@ -272,8 +348,10 @@ def main():
             if not dimension_value:
                 continue
 
-            field_name = f'*field_{column} - {dimension_value}' # 'ESCMAE2010 - Sem escolaridade'
-            df_row_filter = df[column] == dimension_value # df['ESCMAE2010'] == 'Sem escolaridade'
+            field_name = f'*field_{column} - {dimension_value}'  # 'ESCMAE2010 - Sem escolaridade'
+            df_row_filter = (
+                df[column] == dimension_value
+            )  # df['ESCMAE2010'] == 'Sem escolaridade'
 
             # Initialize the field to 0 since all rows that do not match the dimension value
             # should not be counted.
@@ -283,8 +361,10 @@ def main():
             df.loc[df_row_filter, field_name] = 1
     LOG.info('Finished building numeric field columns')
     for dimension_value in df[OUTPUT_CAUSE_OF_DEATH_FIELD].unique():
-        field_name = f'*field_{OUTPUT_CAUSE_OF_DEATH_FIELD} - {dimension_value}' # 'ESCMAE2010 - Sem escolaridade'
-        df_row_filter = df[OUTPUT_CAUSE_OF_DEATH_FIELD] == dimension_value # df['ESCMAE2010'] == 'Sem escolaridade'
+        field_name = f'*field_{OUTPUT_CAUSE_OF_DEATH_FIELD} - {dimension_value}'  # 'ESCMAE2010 - Sem escolaridade'
+        df_row_filter = (
+            df[OUTPUT_CAUSE_OF_DEATH_FIELD] == dimension_value
+        )  # df['ESCMAE2010'] == 'Sem escolaridade'
         df[field_name] = 0
         df.loc[df_row_filter, field_name] = 1
 
@@ -294,6 +374,7 @@ def main():
 
     LOG.info('Finished writing output CSV')
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

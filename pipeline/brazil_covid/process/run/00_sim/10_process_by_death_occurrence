@@ -9,7 +9,7 @@ SetupEnvForPyPy
   --date 'date' \
   --enable_field_wildcards \
   --prefix 'sim_occurrence_' \
-  --sourcename 'SIM' \
+  --sourcename 'sim' \
   --rename_cols \
     'RegionNameOcor:RegionName' \
     'StateNameOcor:StateName' \

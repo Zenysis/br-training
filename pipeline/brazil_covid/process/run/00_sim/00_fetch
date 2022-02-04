@@ -8,6 +8,7 @@ rm -rf "${PIPELINE_FEED_DIR}"/*
 
 pushd "${PIPELINE_FEED_DIR}" &> /dev/null
 
-wget 'https://opendatasus.saude.gov.br/dataset/57c4b23e-6ffa-43ef-a1e7-23103f73f376/resource/da17c5f6-aa89-4e7d-b7e2-ec4b77a5dc31/download/do2021opendata.csv'
+latest_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'sim_2019.csv.lz4')
+FetchFiles "${latest_dir}/*" .
 
 popd &> /dev/null
