@@ -5,17 +5,31 @@ source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
 SetupEnvForPyPy
 
-"${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
-  --date 'date' \
-  --enable_field_wildcards \
-  --prefix 'sim_residence_' \
-  --sourcename 'sim' \
-  --rename_cols \
-    'RegionNameRes:RegionName' \
-    'StateNameRes:StateName' \
-    'HealthRegionNameRes:HealthRegionName' \
-    'MunicipalityNameRes:MunicipalityName' \
-  --input="${PIPELINE_FEED_DIR}/sim_converted.csv.lz4" \
-  --output_locations="${PIPELINE_TMP_DIR}/locations_0.csv" \
-  --output_fields="${PIPELINE_TMP_DIR}/fields_0.csv" \
-  --output_rows="${PIPELINE_TMP_DIR}/processed_data_0.json.lz4"
+# Track background process IDs so that we can reliably capture exit code
+pids=()
+
+count=0
+for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
+  "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
+    --date 'date' \
+    --enable_field_wildcards \
+    --prefix 'sim_residence_' \
+    --sourcename 'sim' \
+    --rename_cols \
+      'RegionNameRes:RegionName' \
+      'StateNameRes:StateName' \
+      'HealthRegionNameRes:HealthRegionName' \
+      'MunicipalityNameRes:MunicipalityName' \
+    --input="${data_file}" \
+    --output_locations="${PIPELINE_TMP_DIR}/locations_res_${count}.csv" \
+    --output_fields="${PIPELINE_TMP_DIR}/fields_res_${count}.csv" \
+    --output_rows="${PIPELINE_TMP_DIR}/processed_data_res_${count}.json.lz4" \
+  | TagLines "$(basename "${data_file}")" &
+  pids+=("$!")
+
+  count=$((count + 1))
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"

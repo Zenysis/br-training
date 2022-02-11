@@ -8,6 +8,10 @@ from pylib.base.flags import Flags
 
 from log import LOG
 from util.file.compression.lz4 import LZ4Reader, LZ4Writer
+from util.file.file_config import FilePattern
+
+# Only read in 1/2 gb of compressed files at a time.
+FILE_SIZE_THRESHOLD = 0.5 * 1024 * 1024 * 1024
 
 ESC2010_COLUMN_MAPPING = {
     '0': 'Sem escolaridade',
@@ -170,43 +174,18 @@ OUTPUT_CAUSE_OF_DEATH_FIELD = 'cause_of_death'
 INPUT_CAUSE_OF_DEATH_FIELD = 'field_id'
 
 
-def main():
-    Flags.PARSER.add_argument(
-        '--input_folder',
-        type=str,
-        required=True,
-        help='Input folder with years of raw SIM files to convert',
-    )
-    Flags.PARSER.add_argument(
-        '--output_file', type=str, required=True, help='Converted file location'
-    )
-    Flags.PARSER.add_argument(
-        '--cause_of_death_codes_csv',
-        type=str,
-        required=True,
-        help='File path for cause of death codes to fields',
-    )
-    Flags.InitArgs()
-
-    LOG.info('Reading in input files into dataframe')
-    df = pd.DataFrame()
-    for input_file_name in os.listdir(Flags.ARGS.input_folder):
-        if input_file_name.endswith('.csv.lz4'):
-            LOG.info('Processing file %s', input_file_name)
-            with LZ4Reader(
-                os.path.join(Flags.ARGS.input_folder, input_file_name)
-            ) as input_file:
-                input_df = pd.read_csv(
-                    input_file,
-                    sep=';',
-                    dtype=str,
-                    keep_default_na=False,
-                    usecols=lambda col: col in INPUT_REQUIRED_COLUMNS,
-                )
-                df = df.append(input_df, ignore_index=True)
-    LOG.info('Finished reading input files')
-
+def process_dataframe(
+    df: pd.DataFrame,
+    municipality_df: pd.DataFrame,
+    cause_of_death_df: pd.DataFrame,
+    output_file_name: str,
+) -> None:
     LOG.info('Number of rows in input: %s', len(df))
+
+    # Add any columns that might be missing, but expected
+    df = df.reindex(
+        df.columns.union(INPUT_REQUIRED_COLUMNS, sort=False), axis=1, fill_value=''
+    )
 
     LOG.info('Beginning date parsing')
     # After 1996, the date column is `DTOBITO` and typically the format is ddmmyyyy.
@@ -260,8 +239,9 @@ def main():
     LOG.info(
         'Number of rows dropped with invalid dates: %s', len(df[df['date'].isna()])
     )
-    df = df[~df['date'].isna()]
-    input_count = len(df)
+    df = df[~df['date'].isna()].drop(
+        columns=[INPUT_DATE_COLUMN_BEFORE_1996, INPUT_DATE_COLUMN_AFTER_1996]
+    )
     LOG.info('Finished date parsing')
 
     LOG.info('Starting remapping column values to human readable strings')
@@ -269,48 +249,89 @@ def main():
         df[column_name] = df[column_name].replace(mapping_values)
     LOG.info('Finished remapping column values')
 
-    # TODO(stephen): Add in code for states that is missing in CSV. We are seeing
-    # that municipality is ignored for some rows (~717) so we need to account for
-    # this in the mapping.
-    # https://www.ibge.gov.br/explica/codigos-dos-municipios.php
-    LOG.info('Reading municipality code mapping file')
-    municipality_df = pd.read_csv(Flags.ARGS.municipality_code_mapping_file, dtype=str)
-    LOG.info('Finished reading municipalities')
-
-
     # Merge municipality information into primary dataframe for location of residence.
     LOG.info('Matching residence municipality code to full locations')
     df = (df
-        .merge(municipality_df, left_on=INPUT_MUNICIPALITY_RESIDENCE_COLUMN, right_on='MunicipalityCodeShort')
+        .merge(
+            municipality_df,
+            left_on=INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
+            right_on='MunicipalityCodeShort',
+            how='left',
+        )
         .rename(columns=RESIDENCE_LOCATION_COLUMN_RENAME)
         .drop(columns=['MunicipalityCodeShort', 'MunicipalityCodeLong'])
+    )
+    # Some rows use the long municipality code
+    first_geo_dimension = list(RESIDENCE_LOCATION_COLUMN_RENAME.values())[0]
+    df.loc[
+        df[first_geo_dimension].isna(), RESIDENCE_LOCATION_COLUMN_RENAME.values()
+    ] = (
+        df.loc[df[first_geo_dimension].isna(), :]
+        .merge(
+            municipality_df,
+            left_on=INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
+            right_on='MunicipalityCodeLong',
+            how='left',
+        )[RESIDENCE_LOCATION_COLUMN_RENAME.keys()]
+        .values
+    )
+    # Log unmatched residential municipality codes
+    LOG.info('Unmatched residence municipality codes')
+    LOG.info(
+        df.loc[
+            df[first_geo_dimension].isna()
+            & ~df[INPUT_MUNICIPALITY_RESIDENCE_COLUMN].isna(),
+            :,
+        ]
+        .groupby(INPUT_MUNICIPALITY_RESIDENCE_COLUMN)
+        .agg({'date': ['size', 'min', 'max']})
+        .sort_values(('date', 'size'), ascending=False)
     )
 
     # Merge municipality information into primary dataframe for location of death.
     LOG.info('Matching death occurrence municipality code to full locations')
     df = (df
-        .merge(municipality_df, left_on=INPUT_MUNICIPALITY_OCCURRENCE_COLUMN, right_on='MunicipalityCodeShort')
+        .merge(
+            municipality_df,
+            left_on=INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
+            right_on='MunicipalityCodeShort',
+            how='left',
+        )
         .rename(columns=OCCURENCE_LOCATION_COLUMN_RENAME)
         .drop(columns=['MunicipalityCodeShort', 'MunicipalityCodeLong'])
     )
-    after_merge_count = len(df)
-    assert input_count == after_merge_count, \
-        'Some rows were dropped after municipality code merging! Original rows: %s, New rows: %s' % (input_count, after_merge_count)
+    # Some rows use the long municipality code
+    first_geo_dimension = list(OCCURENCE_LOCATION_COLUMN_RENAME.values())[0]
+    df.loc[
+        df[first_geo_dimension].isna(), OCCURENCE_LOCATION_COLUMN_RENAME.values()
+    ] = (
+        df.loc[df[first_geo_dimension].isna(), :]
+        .merge(
+            municipality_df,
+            left_on=INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
+            right_on='MunicipalityCodeLong',
+            how='left',
+        )[OCCURENCE_LOCATION_COLUMN_RENAME.keys()]
+        .values
+    )
+    # Log unmatched occurrence municipality codes
+    df.loc[
+        df[first_geo_dimension].isna()
+        & ~df[INPUT_MUNICIPALITY_OCCURRENCE_COLUMN].isna(),
+        :,
+    ].groupby(INPUT_MUNICIPALITY_OCCURRENCE_COLUMN).agg(
+        {'date': ['size', 'min', 'max']}
+    ).sort_values(
+        ('date', 'size'), ascending=False
+    ).to_csv(
+        'occurrence_municipality_codes.csv'
+    )
 
+    missing_row_number = len(df.loc[df['RegionNameRes'].isna() | df['RegionNameOcor'].isna()])
+    LOG.info('Number of rows missing a location %s', missing_row_number)
     LOG.info('Finished matching municipalities')
 
-    LOG.info('Starting cause of death load')
-    cause_of_death_df = pd.read_csv(Flags.ARGS.cause_of_death_codes_csv)
-    shortened_cid_lookup = {}
-    for _, row in cause_of_death_df.iterrows():
-        shortened_cid_lookup[row['cid_id'][:-1]] = row[INPUT_CAUSE_OF_DEATH_FIELD]
-    shortened_df = []
-    for key, val in shortened_cid_lookup.items():
-        shortened_df.append({'cid_id': key, INPUT_CAUSE_OF_DEATH_FIELD: val})
-    shortened_df = pd.DataFrame(shortened_df)
-    cause_of_death_df = pd.concat([cause_of_death_df, shortened_df])
-
-    LOG.info(cause_of_death_df.head(10))
+    LOG.info('Starting processing cause of death')
     df[INPUT_CAUSE_OF_DEATH_COLUMN] = [
         s.lower() for s in df[INPUT_CAUSE_OF_DEATH_COLUMN]
     ]
@@ -328,14 +349,13 @@ def main():
     )
     # HACK(abby): Older years use the cause of death codes differently. Temporarily use
     # 'unknown' for those rows so they aren't dropped until this can be addressed.
+    LOG.info(
+        'Number of rows with unmatched CID IDs: %s',
+        df[OUTPUT_CAUSE_OF_DEATH_FIELD].isna().sum(),
+    )
     df.loc[
         df[OUTPUT_CAUSE_OF_DEATH_FIELD].isna(), OUTPUT_CAUSE_OF_DEATH_FIELD
     ] = 'ignorado'
-    after_merge_count = len(df)
-    assert input_count == after_merge_count, (
-        'Some rows were dropped after cause of death code merging! Original rows: %s, New rows: %s'
-        % (input_count, after_merge_count)
-    )
     LOG.info('Finished processing cause of death')
 
     LOG.info('Building numeric field columns')
@@ -359,20 +379,107 @@ def main():
 
             # Set all rows that match the filter to 1.
             df.loc[df_row_filter, field_name] = 1
-    LOG.info('Finished building numeric field columns')
+
+    # Build fields for cause of death indicators
     for dimension_value in df[OUTPUT_CAUSE_OF_DEATH_FIELD].unique():
-        field_name = f'*field_{OUTPUT_CAUSE_OF_DEATH_FIELD} - {dimension_value}'  # 'ESCMAE2010 - Sem escolaridade'
-        df_row_filter = (
-            df[OUTPUT_CAUSE_OF_DEATH_FIELD] == dimension_value
-        )  # df['ESCMAE2010'] == 'Sem escolaridade'
+        field_name = f'*field_{OUTPUT_CAUSE_OF_DEATH_FIELD} - {dimension_value}'
+        df_row_filter = df[OUTPUT_CAUSE_OF_DEATH_FIELD] == dimension_value
         df[field_name] = 0
         df.loc[df_row_filter, field_name] = 1
+    LOG.info('Finished building numeric field columns')
 
     LOG.info('Writing the output CSV')
-    with LZ4Writer(Flags.ARGS.output_file) as output_file:
+    with LZ4Writer(output_file_name) as output_file:
         df.to_csv(output_file, index=False)
-
     LOG.info('Finished writing output CSV')
+
+
+def main():
+    Flags.PARSER.add_argument(
+        '--input_folder',
+        type=str,
+        required=True,
+        help='Input folder with years of raw SIM files to convert',
+    )
+    Flags.PARSER.add_argument(
+        '--municipality_code_mapping_file',
+        type=str,
+        required=True,
+        help='CSV file containing a mapping from municipality code to the full hierarchy'
+    )
+    Flags.PARSER.add_argument(
+        '--output_file_pattern', type=str, required=True, help='Converted file pattern location'
+    )
+    Flags.PARSER.add_argument(
+        '--cause_of_death_codes_csv',
+        type=str,
+        required=True,
+        help='File path for cause of death codes to fields',
+    )
+    Flags.InitArgs()
+
+    output_file_pattern = FilePattern(Flags.ARGS.output_file_pattern)
+
+    # TODO(stephen): Add in code for states that is missing in CSV. We are seeing
+    # that municipality is ignored for some rows (~717) so we need to account for
+    # this in the mapping.
+    # https://www.ibge.gov.br/explica/codigos-dos-municipios.php
+    LOG.info('Reading municipality code mapping file')
+    municipality_df = pd.read_csv(Flags.ARGS.municipality_code_mapping_file, dtype=str)
+    LOG.info('Finished reading municipalities')
+
+    LOG.info('Starting cause of death load')
+    cause_of_death_df = pd.read_csv(Flags.ARGS.cause_of_death_codes_csv)
+    shortened_cid_lookup = {}
+    for _, row in cause_of_death_df.iterrows():
+        shortened_cid_lookup[row['cid_id'][:-1]] = row[INPUT_CAUSE_OF_DEATH_FIELD]
+    shortened_df = []
+    for key, val in shortened_cid_lookup.items():
+        shortened_df.append({'cid_id': key, INPUT_CAUSE_OF_DEATH_FIELD: val})
+    shortened_df = pd.DataFrame(shortened_df)
+    cause_of_death_df = pd.concat([cause_of_death_df, shortened_df])
+    LOG.info(cause_of_death_df.head(10))
+
+    LOG.info('Reading in input files into dataframe')
+    df = pd.DataFrame()
+    total_file_size_counter = 0
+    count = 0
+    for input_file_name in os.listdir(Flags.ARGS.input_folder):
+        if input_file_name.endswith('.csv.lz4'):
+            file_name = os.path.join(Flags.ARGS.input_folder, input_file_name)
+            file_size = os.stat(file_name).st_size
+            if total_file_size_counter + file_size > FILE_SIZE_THRESHOLD:
+                LOG.info('Processing previous data and creating new dataframe')
+                # Process the current dataframe
+                process_dataframe(
+                    df,
+                    municipality_df,
+                    cause_of_death_df,
+                    output_file_pattern.build(str(count)),
+                )
+                # Create a new one
+                total_file_size_counter = 0
+                count += 1
+                df = pd.DataFrame()
+
+            LOG.info('Processing file %s', input_file_name)
+            total_file_size_counter += file_size
+            with LZ4Reader(file_name) as input_file:
+                input_df = pd.read_csv(
+                    input_file,
+                    sep=';',
+                    dtype=str,
+                    keep_default_na=False,
+                    usecols=lambda col: col in INPUT_REQUIRED_COLUMNS,
+                )
+                df = df.append(input_df, ignore_index=True)
+    LOG.info('Finished reading input files')
+
+    LOG.info('Processing final dataframe')
+    process_dataframe(
+        df,municipality_df, cause_of_death_df, output_file_pattern.build(str(count))
+    )
+
     return 0
 
 

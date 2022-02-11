@@ -10,11 +10,9 @@ pushd "${PIPELINE_FEED_DIR}" &> /dev/null
 # Clean up old files from multiple runs.
 rm -f *.csv.lz4
 
-# HACK(abby): The whole dataset is too large for how we currently create the
-# fields. Limit the data until this can be resolved.
 "${PIPELINE_BIN_DIR}/sim/fetch_sim_data.py" \
   --output_folder="${PIPELINE_FEED_DIR}" \
-  --start_year=2015 \
+  --start_year=1979 \
   --end_year=2019
 
 popd &> /dev/null
