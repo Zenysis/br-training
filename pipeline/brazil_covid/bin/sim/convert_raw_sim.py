@@ -6,6 +6,7 @@ import pandas as pd
 
 from pylib.base.flags import Flags
 
+from config.br_covid.datatypes import Dimension
 from log import LOG
 from util.file.compression.lz4 import LZ4Reader, LZ4Writer
 from util.file.file_config import FilePattern
@@ -137,6 +138,27 @@ COLUMN_MAPPING_VALUES = {
         '9': 'Ignorado',
         '': '',
     },
+    'TIPOBITO': {
+        '1': 'Fetal',
+        '2': 'Não Fetal',
+        '': '',
+    },
+}
+
+# Most columns in COLUMN_MAPPING_VALUES should be fields. Exclude some columns that
+# should not be fields.
+FIELD_COLUMNS = {
+    key: value
+    for key, value in COLUMN_MAPPING_VALUES.items()
+    if key not in {'SEXO', 'RACACOR', 'ESC2010'}
+}
+
+# These columns have numerical values and require no mapping
+INPUT_NUMERIC_COLUMNS_TO_FIELDS = {
+    'IDADEMAE',
+    'QTDFILVIVO',
+    'QTDFILMORT',
+    'SEMAGESTAC',
 }
 
 # Mapping from residence location to the output name for those locations.
@@ -155,23 +177,138 @@ OCCURENCE_LOCATION_COLUMN_RENAME = {
     'MunicipalityName': 'MunicipalityNameOcor'
 }
 
+# Mapping from death certification location to the output name for those locations.
+CERTIFICATION_LOCATION_COLUMN_RENAME = {
+    'RegionName': 'RegionNameCert',
+    'StateName': 'StateNameCert',
+    'HealthRegionName': 'HealthRegionNameCert',
+    'MunicipalityName': 'MunicipalityNameCert'
+}
+
+RENAME_DIMENSIONS = {
+    'ACIDTRAB': Dimension.IS_WORK_RELATED,
+    'ASSISTMED': Dimension.MEDICAL_CARE,
+    'CIRCOBITO': Dimension.VIOLENT_DEATH_TYPE,
+    'ESC2010': Dimension.SCHOOLING,
+    'ESCMAE2010': Dimension.MOTHERS_SCHOOLING,
+    'FONTE': Dimension.INFO_SOURCE,
+    'GRAVIDEZ': Dimension.PREGNANCY_TYPE,
+    'IDADE': Dimension.AGE,
+    'IDADEMAE': Dimension.MOTHERS_AGE,
+    'LOCOCOR': Dimension.PLACE_OF_DEATH,
+    'NECROPSIA': Dimension.IS_AUTOPSY,
+    'OBITOPARTO': Dimension.MOMENT_OF_CHILDBIRTH,
+    'PARTO': Dimension.PREGNANCY_KIND,
+    'QTDFILMORT': Dimension.NUMBER_DECEASED_CHILDREN,
+    'QTDFILVIVO': Dimension.NUMBER_LIVING_CHILDREN,
+    'RACACOR': Dimension.RACE,
+    'SEMAGESTAC': Dimension.GESTATION_WEEKS,
+    'SEXO': Dimension.GENDER,
+    'TPMORTEOCO': Dimension.GESTATIONAL_PHASE,
+}
+
 INPUT_DATE_COLUMN_BEFORE_1996 = 'DATAOBITO'
 INPUT_DATE_COLUMN_AFTER_1996 = 'DTOBITO'
 INPUT_MUNICIPALITY_RESIDENCE_COLUMN = 'CODMUNRES'
 INPUT_MUNICIPALITY_OCCURRENCE_COLUMN = 'CODMUNOCOR'
+INPUT_MUNICIPALITY_CERTIFICATION_COLUMN = 'COMUNSVOIM'
 INPUT_CAUSE_OF_DEATH_COLUMN = 'CAUSABAS'
+INPUT_AGE_COLUMN = 'IDADE'
 
 INPUT_REQUIRED_COLUMNS = {
     INPUT_DATE_COLUMN_BEFORE_1996,
     INPUT_DATE_COLUMN_AFTER_1996,
     INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
     INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
+    INPUT_MUNICIPALITY_CERTIFICATION_COLUMN,
     INPUT_CAUSE_OF_DEATH_COLUMN,
+    INPUT_AGE_COLUMN,
     *COLUMN_MAPPING_VALUES.keys(),
+    *INPUT_NUMERIC_COLUMNS_TO_FIELDS,
 }
 
 OUTPUT_CAUSE_OF_DEATH_FIELD = 'cause_of_death'
 INPUT_CAUSE_OF_DEATH_FIELD = 'field_id'
+
+
+# The first digit of the age value is the unit. Convert this to a more human readable form.
+def convert_age(age: str) -> str:
+    if age == '':
+        return ''
+
+    first_digit = age[0]
+    age_number = int(age[1:])
+
+    if first_digit == '0':
+        return f'{age_number} segundos'
+    if first_digit == '1':
+        return f'{age_number} minutos'
+    if first_digit == '2':
+        return f'{age_number} horas'
+    if first_digit == '3':
+        return f'{age_number} meses'
+    if first_digit == '4':
+        return f'{age_number} anos'
+    if first_digit == '5':
+        return f'{age_number + 100} anos'
+
+    return ''
+
+
+def convert_numerical_columns(
+    df: pd.DataFrame, column_name: str, convert_to_int: bool
+) -> None:
+    # Convert 99 to empty string (missing value)
+    df.loc[df[column_name] == '99', column_name] = ''
+
+    if convert_to_int:
+        # Convert non-empty rows to integers
+        df.loc[df[column_name] != '', column_name] = pd.to_numeric(
+            df.loc[df[column_name] != '', column_name],
+            downcast='integer',
+            errors='coerce',
+        )
+
+# Merge municipality information into primary dataframe for the given location.
+def match_municipality_codes(
+    df: pd.DataFrame,
+    municipality_df: pd.DataFrame,
+    location_column: str,
+    rename_lookup: dict,
+):
+    df = (
+        df.merge(
+            municipality_df,
+            left_on=location_column,
+            right_on='MunicipalityCodeShort',
+            how='left',
+        )
+        .rename(columns=rename_lookup)
+        .drop(columns=['MunicipalityCodeShort', 'MunicipalityCodeLong'])
+    )
+    # Some rows use the long municipality code
+    first_geo_dimension = list(rename_lookup.values())[0]
+    df.loc[df[first_geo_dimension].isna(), rename_lookup.values()] = (
+        df.loc[df[first_geo_dimension].isna(), :]
+        .merge(
+            municipality_df,
+            left_on=location_column,
+            right_on='MunicipalityCodeLong',
+            how='left',
+        )[rename_lookup.keys()]
+        .values
+    )
+    # Log unmatched municipality codes
+    LOG.info('Unmatched municipality codes:')
+    LOG.info(
+        df.loc[
+            df[first_geo_dimension].isna() & ~df[location_column].isna(),
+            :,
+        ]
+        .groupby(location_column)
+        .agg({'date': ['size', 'min', 'max']})
+        .sort_values(('date', 'size'), ascending=False)
+    )
 
 
 def process_dataframe(
@@ -247,87 +384,48 @@ def process_dataframe(
     LOG.info('Starting remapping column values to human readable strings')
     for column_name, mapping_values in COLUMN_MAPPING_VALUES.items():
         df[column_name] = df[column_name].replace(mapping_values)
+
+    # Convert age to human readable
+    df[INPUT_AGE_COLUMN] = df[INPUT_AGE_COLUMN].apply(convert_age)
+
+    # Convert numerical columns
+    convert_numerical_columns(df, 'QTDFILVIVO', True)
+    convert_numerical_columns(df, 'QTDFILMORT', True)
+    convert_numerical_columns(df, 'SEMAGESTAC', False)
     LOG.info('Finished remapping column values')
 
-    # Merge municipality information into primary dataframe for location of residence.
+    # Merge municipality information into primary dataframe for 3 locations.
     LOG.info('Matching residence municipality code to full locations')
-    df = (df
-        .merge(
-            municipality_df,
-            left_on=INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
-            right_on='MunicipalityCodeShort',
-            how='left',
-        )
-        .rename(columns=RESIDENCE_LOCATION_COLUMN_RENAME)
-        .drop(columns=['MunicipalityCodeShort', 'MunicipalityCodeLong'])
-    )
-    # Some rows use the long municipality code
-    first_geo_dimension = list(RESIDENCE_LOCATION_COLUMN_RENAME.values())[0]
-    df.loc[
-        df[first_geo_dimension].isna(), RESIDENCE_LOCATION_COLUMN_RENAME.values()
-    ] = (
-        df.loc[df[first_geo_dimension].isna(), :]
-        .merge(
-            municipality_df,
-            left_on=INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
-            right_on='MunicipalityCodeLong',
-            how='left',
-        )[RESIDENCE_LOCATION_COLUMN_RENAME.keys()]
-        .values
-    )
-    # Log unmatched residential municipality codes
-    LOG.info('Unmatched residence municipality codes')
-    LOG.info(
-        df.loc[
-            df[first_geo_dimension].isna()
-            & ~df[INPUT_MUNICIPALITY_RESIDENCE_COLUMN].isna(),
-            :,
-        ]
-        .groupby(INPUT_MUNICIPALITY_RESIDENCE_COLUMN)
-        .agg({'date': ['size', 'min', 'max']})
-        .sort_values(('date', 'size'), ascending=False)
+    match_municipality_codes(
+        df,
+        municipality_df,
+        INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
+        RESIDENCE_LOCATION_COLUMN_RENAME,
     )
 
-    # Merge municipality information into primary dataframe for location of death.
     LOG.info('Matching death occurrence municipality code to full locations')
-    df = (df
-        .merge(
-            municipality_df,
-            left_on=INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
-            right_on='MunicipalityCodeShort',
-            how='left',
-        )
-        .rename(columns=OCCURENCE_LOCATION_COLUMN_RENAME)
-        .drop(columns=['MunicipalityCodeShort', 'MunicipalityCodeLong'])
-    )
-    # Some rows use the long municipality code
-    first_geo_dimension = list(OCCURENCE_LOCATION_COLUMN_RENAME.values())[0]
-    df.loc[
-        df[first_geo_dimension].isna(), OCCURENCE_LOCATION_COLUMN_RENAME.values()
-    ] = (
-        df.loc[df[first_geo_dimension].isna(), :]
-        .merge(
-            municipality_df,
-            left_on=INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
-            right_on='MunicipalityCodeLong',
-            how='left',
-        )[OCCURENCE_LOCATION_COLUMN_RENAME.keys()]
-        .values
-    )
-    # Log unmatched occurrence municipality codes
-    df.loc[
-        df[first_geo_dimension].isna()
-        & ~df[INPUT_MUNICIPALITY_OCCURRENCE_COLUMN].isna(),
-        :,
-    ].groupby(INPUT_MUNICIPALITY_OCCURRENCE_COLUMN).agg(
-        {'date': ['size', 'min', 'max']}
-    ).sort_values(
-        ('date', 'size'), ascending=False
-    ).to_csv(
-        'occurrence_municipality_codes.csv'
+    match_municipality_codes(
+        df,
+        municipality_df,
+        INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
+        OCCURENCE_LOCATION_COLUMN_RENAME,
     )
 
-    missing_row_number = len(df.loc[df['RegionNameRes'].isna() | df['RegionNameOcor'].isna()])
+    LOG.info('Matching death certification municipality code to full locations')
+    match_municipality_codes(
+        df,
+        municipality_df,
+        INPUT_MUNICIPALITY_CERTIFICATION_COLUMN,
+        CERTIFICATION_LOCATION_COLUMN_RENAME,
+    )
+
+    missing_row_number = len(
+        df.loc[
+            df['RegionNameRes'].isna()
+            | df['RegionNameOcor'].isna()
+            | df['RegionNameCert'].isna()
+        ]
+    )
     LOG.info('Number of rows missing a location %s', missing_row_number)
     LOG.info('Finished matching municipalities')
 
@@ -361,7 +459,7 @@ def process_dataframe(
     LOG.info('Building numeric field columns')
     # Build a unique numeric field for each dimension value in all the columns that we care
     # about. This will allow the user to query for a specific value without grouping.
-    for column, dimension_mapping in COLUMN_MAPPING_VALUES.items():
+    for column, dimension_mapping in FIELD_COLUMNS.items.items():
         for dimension_value in dimension_mapping.values():
             # If there is no value for this dimension in the dataframe, we don't need to
             # create a field for it.
@@ -380,6 +478,11 @@ def process_dataframe(
             # Set all rows that match the filter to 1.
             df.loc[df_row_filter, field_name] = 1
 
+    # Build fields for numeric columns
+    for column in INPUT_NUMERIC_COLUMNS_TO_FIELDS:
+        field_name = f'*field_{column}'
+        df[field_name] = df[column]
+
     # Build fields for cause of death indicators
     for dimension_value in df[OUTPUT_CAUSE_OF_DEATH_FIELD].unique():
         field_name = f'*field_{OUTPUT_CAUSE_OF_DEATH_FIELD} - {dimension_value}'
@@ -387,6 +490,10 @@ def process_dataframe(
         df[field_name] = 0
         df.loc[df_row_filter, field_name] = 1
     LOG.info('Finished building numeric field columns')
+
+    LOG.info('Renaming columns')
+    df = df.rename(columns=RENAME_DIMENSIONS)
+    LOG.info('Finished renaming columns')
 
     LOG.info('Writing the output CSV')
     with LZ4Writer(output_file_name) as output_file:

@@ -45,6 +45,28 @@ DIMENSION_CATEGORIES = [
             Dimension.HOSPITALIZATION,
         ],
     ),
+    (
+        'SIM',
+        [
+            Dimension.AGE,
+            Dimension.MOTHERS_AGE,
+            Dimension.SCHOOLING,
+            Dimension.MOTHERS_SCHOOLING,
+            Dimension.PLACE_OF_DEATH,
+            Dimension.MEDICAL_CARE,
+            Dimension.IS_AUTOPSY,
+            Dimension.VIOLENT_DEATH_TYPE,
+            Dimension.IS_WORK_RELATED,
+            Dimension.INFO_SOURCE,
+            Dimension.NUMBER_LIVING_CHILDREN,
+            Dimension.NUMBER_DECEASED_CHILDREN,
+            Dimension.PREGNANCY_TYPE,
+            Dimension.GESTATIONAL_PHASE,
+            Dimension.GESTATION_WEEKS,
+            Dimension.PREGNANCY_KIND,
+            Dimension.MOMENT_OF_CHILDBIRTH,
+        ],
+    ),
     ('Outros', [Dimension.AGE_GROUP, Dimension.GENDER, Dimension.RACE]),
 ]
 

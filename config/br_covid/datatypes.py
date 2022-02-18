@@ -31,6 +31,24 @@ class Dimension:
     FINAL_CLASSIFICATION_OF_CASE = 'FinalClassificationOfCase'
     HOSPITALIZATION = 'Hospitalization'
 
+    AGE = 'Age'
+    MOTHERS_AGE = 'MothersAge'
+    SCHOOLING = 'Schooling'
+    MOTHERS_SCHOOLING = 'MothersSchooling'
+    PLACE_OF_DEATH = 'PlaceOfDeath'
+    MEDICAL_CARE = 'MedicalCare'
+    IS_AUTOPSY = 'IsAutopsy'
+    VIOLENT_DEATH_TYPE = 'ViolentDeathType'
+    IS_WORK_RELATED = 'IsWorkRelated'
+    INFO_SOURCE = 'InfoSource'
+    NUMBER_LIVING_CHILDREN = 'NumberLivingChildren'
+    NUMBER_DECEASED_CHILDREN = 'NumberDeceasedChildren'
+    PREGNANCY_TYPE = 'PregnancyType'
+    GESTATIONAL_PHASE = 'GestationalPhase'
+    GESTATION_WEEKS = 'GestationWeeks'
+    PREGNANCY_KIND = 'PregnancyKind'
+    MOMENT_OF_CHILDBIRTH = 'MomentOfChildbirth'
+
 
 class LocationTypeEnum(Enum):
     NATION = 1

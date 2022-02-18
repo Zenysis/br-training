@@ -1,0 +1,35 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+SetupEnvForPyPy
+
+# Track background process IDs so that we can reliably capture exit code
+pids=()
+
+count=0
+for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
+  "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
+    --date 'date' \
+    --enable_field_wildcards \
+    --prefix 'sim_certification_' \
+    --sourcename 'sim' \
+    --rename_cols \
+      'RegionNameCert:RegionName' \
+      'StateNameCert:StateName' \
+      'HealthRegionNameCert:HealthRegionName' \
+      'MunicipalityNameCert:MunicipalityName' \
+    --input="${data_file}" \
+    --output_locations="${PIPELINE_TMP_DIR}/locations_cert_${count}.csv" \
+    --output_fields="${PIPELINE_TMP_DIR}/fields_cert_${count}.csv" \
+    --output_rows="${PIPELINE_TMP_DIR}/processed_data_cert_${count}.json.lz4" \
+  | TagLines "$(basename "${data_file}")" &
+  pids+=("$!")
+
+  count=$((count + 1))
+done
+
+# Wait on each background process individually so that non-zero exit codes
+# will be raised
+WaitMultipleThreads "${pids[@]}"
