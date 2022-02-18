@@ -176,9 +176,6 @@ web/server/zenysis.sqlite*
 # Jupyter notebook checkpoints
 **/.ipynb_checkpoints
 
-# Pipeline output
-pipeline/out
-
 # Logging
 # (Is this really the best place for the log to be stored?)
 api_log
