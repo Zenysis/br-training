@@ -298,17 +298,47 @@ def match_municipality_codes(
         )[rename_lookup.keys()]
         .values
     )
-    # Log unmatched municipality codes
-    LOG.info('Unmatched municipality codes:')
-    LOG.info(
-        df.loc[
-            df[first_geo_dimension].isna() & ~df[location_column].isna(),
-            :,
-        ]
-        .groupby(location_column)
-        .agg({'date': ['size', 'min', 'max']})
-        .sort_values(('date', 'size'), ascending=False)
+
+    # For unmatched municipality codes starting with 53, change to
+    # 530010 (codes intended for DF)
+    df.loc[
+        df[first_geo_dimension].isna() & (df[location_column] != '') & df[location_column].str.startswith("53"),
+        location_column,
+    ] = "530010"
+
+    # For the others, consider the first two digits and include “0000” to
+    # complete the 06 digits, thus making the registration with the
+    # municipality ignored.
+    unmatched_filter = df[first_geo_dimension].isna() & (df[location_column] != '') & ~df[location_column].str.startswith("53")
+    df.loc[unmatched_filter,location_column] = df.loc[unmatched_filter,location_column].str[:2] + "0000"
+
+    # merge again
+    df.loc[df[first_geo_dimension].isna(), rename_lookup.values()] = (
+        df.loc[df[first_geo_dimension].isna(), :]
+        .merge(
+            municipality_df,
+            left_on=location_column,
+            right_on='MunicipalityCodeShort',
+            how='left',
+        )[rename_lookup.keys()]
+        .values
     )
+
+    # Log unmatched municipality codes
+    unmatched_rows = df.loc[
+        df[first_geo_dimension].isna() & (df[location_column] != ''),
+        :,
+    ]
+    if len(unmatched_rows) > 0:
+        LOG.info('Unmatched municipality codes:')
+        LOG.info(
+            unmatched_rows
+            .groupby(location_column)
+            .agg({'date': ['size', 'min', 'max']})
+            .sort_values(('date', 'size'), ascending=False)
+        )
+
+    return df
 
 
 def process_dataframe(
@@ -396,7 +426,7 @@ def process_dataframe(
 
     # Merge municipality information into primary dataframe for 3 locations.
     LOG.info('Matching residence municipality code to full locations')
-    match_municipality_codes(
+    df = match_municipality_codes(
         df,
         municipality_df,
         INPUT_MUNICIPALITY_RESIDENCE_COLUMN,
@@ -404,7 +434,7 @@ def process_dataframe(
     )
 
     LOG.info('Matching death occurrence municipality code to full locations')
-    match_municipality_codes(
+    df = match_municipality_codes(
         df,
         municipality_df,
         INPUT_MUNICIPALITY_OCCURRENCE_COLUMN,
@@ -412,7 +442,7 @@ def process_dataframe(
     )
 
     LOG.info('Matching death certification municipality code to full locations')
-    match_municipality_codes(
+    df = match_municipality_codes(
         df,
         municipality_df,
         INPUT_MUNICIPALITY_CERTIFICATION_COLUMN,
@@ -459,7 +489,7 @@ def process_dataframe(
     LOG.info('Building numeric field columns')
     # Build a unique numeric field for each dimension value in all the columns that we care
     # about. This will allow the user to query for a specific value without grouping.
-    for column, dimension_mapping in FIELD_COLUMNS.items.items():
+    for column, dimension_mapping in FIELD_COLUMNS.items():
         for dimension_value in dimension_mapping.values():
             # If there is no value for this dimension in the dataframe, we don't need to
             # create a field for it.

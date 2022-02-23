@@ -12,7 +12,8 @@ Contains:
 3. Update PYTHONPATH. In your bash profile (or z profile, etc.), set the PYTHONPATH environment variable to include the path to this codebase. Run `echo 'export PYTHONPATH="${PYTHONPATH}:<path to repo>"' >> ~/.bash_profile`. Note that anytime you update your bash profile, you either have to restart your terminal or run source ~/.bash_profile.
 4. Creating a regular Virtual Environment. Change into the source directory. Run the following snippet:
 
-```python3 -m venv venv
+```
+python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools
 pip install -r requirements.txt
@@ -24,7 +25,8 @@ deactivate
 
 5. Now we'll create the pypy Python virtual environment (which is a faster runtime that's used for our pipeline). Run the following:
 
-```pypy3 -m venv venv_pypy3
+```
+pypy3 -m venv venv_pypy3
 source venv_pypy3/bin/activate
 pip install --upgrade pip setuptools
 pip install -r requirements.txt
