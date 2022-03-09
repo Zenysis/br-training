@@ -16,7 +16,7 @@ for data_file in "${PIPELINE_FEED_DIR}"/*.csv.gz ; do
     --date 'date' \
     --rename_cols 'AgeGroups:AgeGroup' 'value:val' \
     --prefix 'sinan' \
-    --sourcename 'SINAN' \
+    --sourcename 'sinan' \
     --input="${data_file}" \
     --output_locations="${PIPELINE_TMP_DIR}/locations_${count}.csv" \
     --output_fields="${PIPELINE_TMP_DIR}/fields_${count}.csv" \
