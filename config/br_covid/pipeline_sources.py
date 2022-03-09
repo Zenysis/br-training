@@ -31,6 +31,8 @@ PIPELINE_CONFIG = [
         source_id='sim',
         display_name='SIM',
         extra_shared_steps=[SharedPipelineStepType.PATCH_LOCATIONS],
+        # Remove SIM from this step and run it alone to manage memory better.
+        excluded_shared_steps=[SharedPipelineStepType.FILL_DIMENSION_DATA],
     ),
     PipelineSource(
         source_id='sinan',

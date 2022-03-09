@@ -31,10 +31,19 @@ class Dimension:
     FINAL_CLASSIFICATION_OF_CASE = 'FinalClassificationOfCase'
     HOSPITALIZATION = 'Hospitalization'
 
-    AGE = 'Age'
+    # SIM integration
+    # NOTE(abby): This Age dimension has a conflict in the pt translation file with
+    # mz's Age dimension, use BrazilAge here.
+    AGE = 'BrazilAge'
     MOTHERS_AGE = 'MothersAge'
     SCHOOLING = 'Schooling'
     MOTHERS_SCHOOLING = 'MothersSchooling'
+    CAUSES_TITLE = 'CausesTitle'
+    CAUSES_PARENT = 'CausesParent'
+    CAUSES_CATEGORY_1 = 'CausesCategory1'
+    CAUSES_CATEGORY_2 = 'CausesCategory2'
+    CAUSES_CATEGORY_3 = 'CausesCategory3'
+    CAUSES_CATEGORY_4 = 'CausesCategory4'
     PLACE_OF_DEATH = 'PlaceOfDeath'
     MEDICAL_CARE = 'MedicalCare'
     IS_AUTOPSY = 'IsAutopsy'
