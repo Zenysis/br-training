@@ -1,0 +1,6 @@
+#!/bin/bash -eu
+set -o pipefail
+
+"${PIPELINE_SRC_ROOT}/scripts/data_catalog/populate_metadata_in_googlesheet.py" \
+ --workbook 'Indicator Creation Sheet (Brazil Covid)' \
+ --deployment 'br-covid-web-staging'
