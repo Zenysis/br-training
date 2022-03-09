@@ -1,12 +1,16 @@
 #!/bin/bash -eu
 set -o pipefail
 
+# NOTE(abby): These steps consume a lot of RAM, use 11_ to ensure it doesn't run as
+# other process steps are running.
 source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
 SetupEnvForPyPy
 
-# Track background process IDs so that we can reliably capture exit code
-pids=()
+# Clean up old files from multiple runs.
+rm -f "${PIPELINE_TMP_DIR}"/locations_res_*.csv
+rm -f "${PIPELINE_TMP_DIR}"/fields_res_*.csv
+rm -f "${PIPELINE_TMP_DIR}"/processed_data_res_*.json.lz4
 
 count=0
 for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
@@ -16,20 +20,12 @@ for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
     --prefix 'sim_residence_' \
     --sourcename 'sim' \
     --rename_cols \
-      'RegionNameRes:RegionName' \
-      'StateNameRes:StateName' \
-      'HealthRegionNameRes:HealthRegionName' \
-      'MunicipalityNameRes:MunicipalityName' \
+      'CODMUNRES:MunicipalityName' \
     --input="${data_file}" \
     --output_locations="${PIPELINE_TMP_DIR}/locations_res_${count}.csv" \
     --output_fields="${PIPELINE_TMP_DIR}/fields_res_${count}.csv" \
     --output_rows="${PIPELINE_TMP_DIR}/processed_data_res_${count}.json.lz4" \
-  | TagLines "$(basename "${data_file}")" &
-  pids+=("$!")
+  | TagLines "$(basename "${data_file}")"
 
   count=$((count + 1))
 done
-
-# Wait on each background process individually so that non-zero exit codes
-# will be raised
-WaitMultipleThreads "${pids[@]}"
