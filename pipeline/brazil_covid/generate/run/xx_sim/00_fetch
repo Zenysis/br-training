@@ -1,6 +1,7 @@
 #!/bin/bash -eu
 set -o pipefail
 
+# NOTE(abby): Deactivating this step as this is historical data that doesn't get updated.
 source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
 SetupEnvForPyPy
