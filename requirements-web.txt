@@ -20,6 +20,7 @@ rollbar==0.14.7
 PyJWT==1.7.1
 openpyxl>=3.0.9
 typing_extensions==3.10.0.2
+itsdangerous==2.0.1
 
 alembic>=1.7.1
 

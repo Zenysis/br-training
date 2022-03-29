@@ -25,6 +25,7 @@ DEV_CONFIG = {
     },
 }
 
+# Note that prod log config requires the existence of a /data/output directory.
 PROD_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -86,8 +87,6 @@ PROD_CONFIG = {
             'qualname': 'ZenysisLogger',
             'propagate': False,
         },
-        # NOTE(ian): A stackdriver logger is dynamically added to production
-        # logging in log.py
     },
     'formatters': {
         'standard': {

@@ -36,6 +36,9 @@ class ConfigImporter:
         self._module_whitelist = set(
             [
                 'druid_base',
+                'system',
+                'instance',
+                'locales',
                 'loader',
                 'settings',
             ]

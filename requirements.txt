@@ -1,7 +1,7 @@
 ethiopian-date-converter==0.1.5
 hvac>=0.7.0
 pandas>=1.2.2 ; platform_python_implementation != 'PyPy'
-python-Levenshtein==0.12.0
+psycopg2-binary>=2.8.5 ; platform_python_implementation != 'PyPy'
 python-dateutil>=2.8.1
 requests==2.23.0
 six>=1.9.0
@@ -23,7 +23,7 @@ gspread==3.6.0
 google-cloud-logging==1.11.0 ; platform_python_implementation != 'PyPy'
 
 # Issue with 1.16.[0-2] numpy version with pypy. Use older version for pypy.
-numpy==1.21.0 ; platform_python_implementation != 'PyPy'
+numpy==1.20.0 ; platform_python_implementation != 'PyPy'
 numpy==1.15.4 ; platform_python_implementation == 'PyPy'
 
 # Prod setup tools and utilities

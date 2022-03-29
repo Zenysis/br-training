@@ -1,0 +1,442 @@
+/*
+ * Use cm prefix before every class to prevent CSS naming collisions
+ * (cm = case management)
+ */
+.cm-page-title {
+  padding: 16px 16px;
+}
+
+.cm-case-page {
+  // TODO(pablo): find a more elegant way to do this without nesting so many
+  // selectors. We only want these table styles in the case page, but not when
+  // we open it in a modal. There should be an easy way to handle this through
+  // a prop that injects a class name
+  .cm-dossier__table {
+    tr {
+      // TODO(pablo): its not good to use !important. Instead, our Table
+      // component should be refactored to not have such high selectivity
+      // in its CSS
+      background: white !important;
+      &:hover {
+        background: $light-gray-4 !important;
+      }
+    }
+  }
+
+  &__title {
+    font-size: 32px;
+    font-weight: $bold;
+  }
+
+  &__back-icon {
+    color: $slate;
+    &:hover {
+      color: $slate-hover;
+    }
+  }
+}
+
+.cm-dossier-sub-section {
+  background-color: white;
+  border: 1px solid $gray;
+  border-radius: 2px;
+  height: 100%;
+  width: 100%;
+}
+
+.cm-dossier-col {
+  display: inline-block;
+  width: 40%;
+
+  &--full-width {
+    width: 100%;
+  }
+}
+
+.cm-dossier-core-row {
+  &__label-col {
+    max-width: 300px;
+  }
+
+  &__icon {
+    color: $dark-gray-5;
+    margin-left: $spacing-s;
+    &:hover {
+      color: $dark-gray-1;
+    }
+  }
+
+  &--is-linked {
+    cursor: pointer;
+  }
+}
+
+.cm-quick-stats-col {
+  display: inline-block;
+  padding-left: $spacing-l;
+  vertical-align: top;
+  width: 60%;
+}
+
+.cm-quick-stats {
+  &__last-data-text {
+    font-size: 22px;
+    font-weight: bold;
+  }
+
+  &__sub-heading {
+    font-size: 18px;
+  }
+
+  &__stat-row {
+    font-size: 14px;
+    margin: 0px;
+    .number {
+      font-size: 30px;
+      text-align: center;
+    }
+  }
+}
+
+.cm-alert-case-quick-stats {
+  &__related-alerts-table {
+    tr {
+      cursor: pointer;
+    }
+  }
+
+  &__first-alert {
+    font-size: 16px;
+    margin-top: $spacing-m;
+  }
+
+  &__alert-frequency-msg {
+    font-size: 16px;
+  }
+
+  &__alert-count {
+    font-size: 28px;
+    margin: 0 $spacing-s;
+  }
+}
+
+.cm-timeline {
+  &__add-event-btn {
+    display: inline-block;
+    margin-bottom: $spacing-m;
+    margin-left: $spacing-l;
+    margin-top: 8px;
+    .glyphicon-plus {
+      margin-left: $spacing-xs;
+    }
+  }
+
+  &__timeline-container {
+    overflow-x: auto;
+    padding: $spacing-l $spacing-xs $spacing-l;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  &__main-line {
+    background-color: rgb(179, 190, 195);
+    content: '';
+    display: inline-block;
+    height: 2px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    // width is set through javascript
+  }
+}
+
+.cm-timeline-item-container {
+  display: inline-block;
+  margin-right: 50px;
+  position: relative;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.cm-timeline-item {
+  background-color: rgb(160, 201, 233);
+  border: 3px solid rgb(51, 98, 139);
+  border-radius: 50%;
+  display: inline-block;
+  height: 50px;
+  line-height: 50px;
+  text-align: center;
+  transition: background-color 0.4s, transform 0.4s;
+  width: 50px;
+
+  &:hover {
+    background-color: rgb(199, 222, 242);
+    cursor: pointer;
+    transform: scale(1.3);
+  }
+
+  &.cm-timeline-item--is-alert {
+    background-color: #ff7373;
+    border: 3px solid #a82a2a;
+    &:hover {
+      background-color: lighten(#ff7373, 5%);
+    }
+  }
+
+  &__icon {
+    font-size: 16px;
+    margin-top: -2px;
+  }
+}
+
+.cm-event-hovercard {
+  max-width: 500px;
+
+  &__detail-row {
+    white-space: normal;
+  }
+
+  &__title-container {
+    background-color: $gray-light;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+}
+
+.cm-dashboard {
+  margin-top: $spacing-m;
+
+  &__header {
+    margin-left: 20px;
+  }
+
+  .query-result-view {
+    background-color: $white;
+    height: 800px;
+    margin-top: $spacing-l;
+    // NOTE(nina): The following lines are imported from the now defunct
+    // query-result-view class under /_query_result.scss. We might be able to
+    // get rid of them if they have no effect
+    padding: 15px;
+    @media (max-width: 940px) {
+      padding-top: 60px;
+    }
+  }
+}
+
+.cm-overview-page {
+  &__case-filters-row {
+    > * {
+      display: inline-block;
+      margin-right: $spacing-s;
+    }
+  }
+
+  &__filter-label {
+    font-size: 16px;
+  }
+
+  &__main-contents {
+    padding: $spacing-m;
+  }
+
+  &__executive-dashboard-link {
+    font-size: 18px;
+  }
+
+  &__all-cases-table {
+    margin-top: -30px;
+  }
+
+  &__all-cases-table-header {
+    font-weight: $bold;
+  }
+
+  &__export-row {
+    .glyphicon-export {
+      margin-left: $spacing-s;
+    }
+  }
+
+  &__recency-stats {
+    font-size: 18px;
+    > * {
+      display: inline-block;
+      margin-left: $spacing-s;
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+  }
+
+  &__all-cases-block {
+    background-color: $white;
+    margin-top: $spacing-m;
+  }
+}
+
+.cm-alerts-section {
+  &__alerts-block,
+  &__alerts-summary {
+    background-color: $white;
+  }
+}
+
+.cm-alerts-summary,
+.cm-alerts-block {
+  &__subtitle-row {
+    margin-top: $spacing-m;
+
+    > * {
+      display: inline-block;
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+
+    .zen-dropdown {
+      margin-left: $spacing-s;
+      position: relative;
+      top: -$spacing-xs;
+    }
+
+    .zen-dropdown__menu {
+      margin-top: 40px;
+    }
+  }
+
+  &__connecting-text {
+    font-size: 18px;
+    margin-left: $spacing-s;
+  }
+}
+
+.cm-alerts-summary {
+  &__stats-section {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  &__num-stat-block {
+    display: inline-block;
+    flex: 1 1 33%;
+    margin-top: $spacing-m;
+    text-align: center;
+  }
+
+  &__num-stat-footer {
+    font-size: 16px;
+    text-transform: uppercase;
+  }
+
+  &__num-stat {
+    font-size: 72px;
+  }
+}
+
+.cm-alerts-block {
+  &__header {
+    display: flex;
+  }
+
+  &__header-title {
+    display: flex;
+    flex: 1;
+  }
+
+  &__sub-header {
+    color: $gray-4;
+    margin-left: 10px;
+  }
+
+  // TODO(pablo): extract this into its own component
+  &__export-btn {
+    margin-right: $spacing-s;
+    .glyphicon-export {
+      margin-left: $spacing-s;
+    }
+  }
+
+  &__alerts-list-container {
+    border-bottom: 1px solid $gray-4;
+    display: flex;
+    flex-wrap: wrap;
+    height: 65vh;
+    justify-content: center;
+    overflow: auto;
+    padding: $spacing-m $spacing-l;
+  }
+}
+
+.cm-alerts-dropdown__no-selection {
+  font-style: italic;
+
+  &--is-error {
+    color: red;
+  }
+}
+
+.cm-alert-card-wrapper {
+  // Max 2 items per row.
+  flex: 1 1 50%;
+  margin: $spacing-m;
+  max-width: 380px;
+}
+
+.cm-alert-card {
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    @include zen-elevation-5();
+    transform: scale(1.02);
+  }
+
+  .zen-card__heading {
+    font-size: 18px;
+    font-weight: normal;
+  }
+
+  &__field-triggered {
+    font-size: 16px;
+    margin: 0 0 $spacing-s;
+  }
+
+  &__why-label {
+    font-weight: bold;
+  }
+}
+
+.cm-alert-card-title-block {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+
+  &__label {
+    flex: 1;
+  }
+}
+
+.cm-redacted-text,
+.cm-non-redacted-text {
+  transition: all 0.2s;
+}
+
+.cm-redacted-text {
+  background: $slate;
+  color: transparent;
+  text-shadow: 0 0 15px rgba(0, 0, 0, 1);
+}
+
+.cm-non-redacted-text {
+  background: none;
+  text-shadow: none;
+}
+
+.cm-widget-field-table {
+  background-color: $white;
+  border: 1px solid $gray;
+  border-radius: 5px;
+}

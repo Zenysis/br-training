@@ -1,0 +1,259 @@
+.location-admin-app {
+  .add-action-button {
+    width: 18%;
+
+    .glyphicon {
+      padding: 5px;
+    }
+  }
+
+  .heading-row {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .landing-heading {
+    width: 50%;
+  }
+
+  .landing-cta {
+    float: right;
+    width: 500px;
+
+    .review-link-button {
+      margin-top: -40px;
+    }
+
+    .matching {
+      float: left;
+    }
+  }
+
+  .zen-button {
+    border-radius: 5px;
+  }
+
+  .location-heading {
+    padding: 30px 40px 10px 40px;
+  }
+
+  .location-title {
+    font-size: 30px;
+    text-align: center;
+    width: 100%;
+
+    .ancestor {
+      color: #707070;
+      font-size: 15px;
+    }
+  }
+
+  .matching-item {
+    display: inline-table;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .mfr {
+    .expando-tree {
+      background: #fff;
+      height: calc(100vh - 82px);
+      width: 100vw;
+    }
+
+    .export-mfr-btn {
+      float: right;
+    }
+
+    .header {
+      font-size: 24px;
+      padding: 10px;
+    }
+  }
+
+  .progress-info {
+    display: inline-block;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+    width: 33%;
+
+    .number {
+      font-size: 45px;
+      font-weight: bold;
+    }
+  }
+
+  .review {
+    bottom: 0;
+    left: 0;
+    position: fixed;
+    width: 100%;
+  }
+
+  .review-link-button {
+    float: right;
+    margin-right: 40px;
+    margin-top: -60px;
+    min-width: 220px;
+
+    .button-number {
+      background: #fff;
+      border-radius: 8px;
+      color: #2fa4e2;
+      float: left;
+      width: 15%;
+    }
+
+    .button-text {
+      float: left;
+      width: 80%;
+    }
+  }
+
+  .suggestions {
+    min-height: 300px;
+    width: 63%;
+  }
+
+  .right-buttons {
+    height: 65px;
+    margin: 10px;
+    width: 100%;
+  }
+  .flag-button {
+    background: #f9ce89;
+  }
+}
+
+.location-matching-container {
+  background: $white;
+  border: 2px solid $light-gray-4;
+  margin: 10px 40px 30px 40px;
+  padding: 20px;
+
+  &__selectable-location-btn {
+    border: 0px;
+    border-bottom: 1px solid $light-gray-4;
+    font-size: 20px;
+    height: 55px;
+    width: 100%;
+
+    .ancestor {
+      color: #707070;
+      font-size: 12px;
+    }
+
+    &:hover {
+      background-image: linear-gradient(to right, #2fa4e2, #3c8ae6);
+      border: none;
+      border-radius: 0;
+      color: #fff;
+
+      .ancestor {
+        color: #fff;
+      }
+    }
+
+    .zen-dropdown-button__caret {
+      font-size: 13px;
+    }
+
+    .zen-dropdown-button__button-content {
+      text-align: center;
+    }
+
+    &--selected {
+      background-image: linear-gradient(to right, #2fa4e2, #3c8ae6);
+      border: none;
+      border-radius: 0;
+      color: #fff;
+      text-align: center;
+
+      .ancestor {
+        color: #fff;
+      }
+
+      .location-name {
+        font-size: 20px;
+        font-weight: normal !important;
+        width: 100%;
+      }
+
+      .location-subtitle {
+        color: #fff;
+        font-size: 12px;
+      }
+    }
+  }
+
+  &__selectable-location-dropdown {
+    .location-name {
+      display: inline-block;
+      font-weight: bold;
+      padding-right: 5px;
+    }
+
+    .location-subtitle {
+      color: grey;
+      display: inline-block;
+      font-size: 12px;
+    }
+
+    .zen-dropdown-item-wrapper:hover {
+      background-image: linear-gradient(to right, #2fa4e2, #3c8ae6);
+      color: #fff;
+      .location-subtitle {
+        color: #fff;
+      }
+    }
+
+    .zen-dropdown-item-wrapper--selected {
+      background-image: linear-gradient(to right, #2fa4e2, #3c8ae6);
+      color: #fff;
+      .location-subtitle {
+        color: #fff;
+      }
+    }
+  }
+}
+
+.review-admin {
+  .u-heading-large {
+    padding-bottom: 10px;
+    padding-left: calc((100% - 1000px) / 2);
+    padding-top: 30px;
+  }
+
+  .review-tabs {
+    .zen-tabs__header-row {
+      padding-left: calc((100% - 1000px) / 2);
+    }
+  }
+
+  .zen-review {
+    padding: 20px;
+
+    .u-heading-large {
+      padding-top: 0px;
+    }
+
+    .zen-react-table {
+      margin-top: 20px;
+    }
+  }
+
+  .flagged {
+    &:hover {
+      color: $gray-active;
+    }
+    &__selected {
+      color: #b22222;
+    }
+  }
+
+  .tab-footer {
+    padding: 20px;
+  }
+}

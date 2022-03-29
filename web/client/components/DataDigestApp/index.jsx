@@ -63,8 +63,6 @@ function getDropdownOptions(
   ));
 }
 
-const SLAB_URL = window.__JSON_FROM_BACKEND.dataDigestAppOptions.slabURL;
-
 const GEO_FIELD_ORDERING = window.__JSON_FROM_BACKEND.geoFieldOrdering;
 const DIMENSION_PARENTS = {};
 GEO_FIELD_ORDERING.forEach((value, idx) => {
@@ -163,11 +161,6 @@ export default class DataDigestApp extends React.PureComponent<Props, State> {
       }
       this.updateActiveTab(DEFAULT_TAB_NAME);
     }
-  }
-
-  @autobind
-  openDeliverySlab(): void {
-    window.open(SLAB_URL, '_blank').focus();
   }
 
   @autobind
@@ -317,11 +310,6 @@ export default class DataDigestApp extends React.PureComponent<Props, State> {
     return (
       <RelayEnvironmentProvider environment={environment}>
         <Group.Vertical flex spacing="xxxs">
-          <Spacing alignSelf="flex-end" paddingRight="m" paddingTop="m">
-            <Button onClick={this.openDeliverySlab}>
-              {I18N.text('Delivery Slab')}
-            </Button>
-          </Spacing>
           <Tabs.Controlled
             className="data-digest"
             onTabChange={this.updateActiveTab}
