@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+set -o pipefail
+
+"${PIPELINE_BIN_DIR}/sim/convert_occupation_codes.py" \
+  --short_title="${PIPELINE_FEED_DIR}/short_occupation_title.csv" \
+  --short_subgroup="${PIPELINE_FEED_DIR}/short_occupation_subgroup.csv" \
+  --short_group="${PIPELINE_FEED_DIR}/short_occupation_group.csv" \
+  --cbo94_to_cbo2002="${PIPELINE_FEED_DIR}/cbo94_to_cbo2002.csv" \
+  --cbo_title="${PIPELINE_FEED_DIR}/cbo_titulo.csv" \
+  --cbo_family="${PIPELINE_FEED_DIR}/cbo_familia.csv" \
+  --cbo_subgroup="${PIPELINE_FEED_DIR}/cbo_subgrupo.csv" \
+  --cbo_principal_subgroup="${PIPELINE_FEED_DIR}/cbo_subgrupo_principal.csv" \
+  --cbo_group="${PIPELINE_FEED_DIR}/cbo_grande_grupo.csv" \
+  --output="${PIPELINE_FEED_DIR}/output_occupation.csv"

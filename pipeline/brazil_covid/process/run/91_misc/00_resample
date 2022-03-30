@@ -5,7 +5,8 @@ source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
 SetupEnvForPyPy
 
-SOURCES=('corrections' 'population')
+STEP='resample'
+SOURCES=($("${PIPELINE_SRC_ROOT}/data/pipeline/scripts/generate_pipeline_sources.py" ${STEP}))
 
 # Track background process IDs so that we can reliably capture exit code
 pids=()

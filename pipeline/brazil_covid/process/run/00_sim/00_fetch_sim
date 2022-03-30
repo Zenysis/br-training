@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+# Cleanup data if pipeline run multiple times.
+rm -rf "${PIPELINE_FEED_DIR}"/sim_*.csv.lz4
+
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
+
+latest_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'sim_2019.csv.lz4')
+FetchFiles "${latest_dir}/sim_*.csv.lz4" .
+
+popd &> /dev/null

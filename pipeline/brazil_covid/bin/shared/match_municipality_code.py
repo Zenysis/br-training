@@ -46,7 +46,14 @@ def process_source(filename, short_code_mapping, long_code_mapping):
             location = short_code_mapping.get(
                 municipality_code
             ) or long_code_mapping.get(municipality_code)
-
+            # applying treatment rules for unmatched municipalities
+            if not location:
+                municipality_code = str(municipality_code[:6])
+                if municipality_code.startswith("53"):
+                    municipality_code = "530010"
+                else:
+                    municipality_code = municipality_code[:2] + "0000"
+                location = short_code_mapping.get(municipality_code)
             if not location:
                 LOG.warning(
                     'Cannot find location data for municipality code: %s',

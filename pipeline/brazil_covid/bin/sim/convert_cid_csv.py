@@ -259,9 +259,12 @@ def main():
     cid10_df['short_cid_id'] = cid10_df[ID_COL].str[:3]
     df_len = len(cid10_df)
     cid10_df = cid10_df.merge(
-        code_categories_df, left_on='short_cid_id', right_on='index'
-    ).drop(columns=['index', 'short_cid_id'])
-    assert df_len == len(
+        code_categories_df, left_on='short_cid_id', right_on='index', how='outer'
+    )
+    # Some codes don't have a parent, keep them anyways and fill in the code
+    cid10_df.loc[cid10_df[ID_COL].isna(), ID_COL] = cid10_df['index']
+    cid10_df = cid10_df.drop(columns=['index', 'short_cid_id'])
+    assert df_len <= len(
         cid10_df
     ), 'Rows dropped when merging in categories, all rows should have at least one category'
     LOG.info(cid10_df.head(10))

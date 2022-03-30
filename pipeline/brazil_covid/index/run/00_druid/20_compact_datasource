@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+set -o pipefail
+
+# The Brazil Covid datasource is built using the `dynamic` partitioning scheme which
+# allows us to build the datasource very fast. The downside is that it produces
+# a large number of segments which can affect querying performance. This
+# compaction task (which will run in the background - we don't need to block on
+# it) will reduce the number of segments back to a small amount (one per month).
+
+if ! [ -f "${PIPELINE_TMP_DIR}/datasource_name" ] ; then
+  echo 'Skipping compaction since no datasource was created'
+  exit 0
+fi
+
+"${PIPELINE_SRC_ROOT}/db/druid/indexing/scripts/run_compaction.py" \
+  --datasource="$(cat "${PIPELINE_TMP_DIR}/datasource_name")" \
+  --parallel

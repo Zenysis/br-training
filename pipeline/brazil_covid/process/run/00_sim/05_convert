@@ -7,4 +7,5 @@ rm -f "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4
 "${PIPELINE_BIN_DIR}/sim/convert_raw_sim.py" \
   --input_folder="${PIPELINE_FEED_DIR}" \
   --output_file_pattern="${PIPELINE_TMP_DIR}/sim_converted_#.csv.lz4" \
-  --cause_of_death_codes_csv="${PIPELINE_FEED_DIR}/output_cid.csv"
+  --cause_of_death_codes_csv="${PIPELINE_FEED_DIR}/output_cid.csv" \
+  --occupation_codes_csv="${PIPELINE_FEED_DIR}/output_occupation.csv"

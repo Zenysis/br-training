@@ -48,7 +48,8 @@ def main():
 
         # Write the data to a file
         output_file_name = os.path.join(output_folder, f'sim_{current_year}.csv.lz4')
-        with LZ4Writer(output_file_name) as writer:
+        # Since these are large files, use high compression
+        with LZ4Writer(output_file_name, level=9) as writer:
             writer.write(response.text)
 
         current_year += 1

@@ -19,8 +19,8 @@ for cur_source in "${SOURCES[@]}" ; do
   rm -f "${source_out_dir}"/processed_rows.*.json.gz
 
   "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/fill_dimension_data.py" \
-      --location_mapping_file="${source_out_dir}/mapped_locations.csv" \
-      --metadata_file="${PIPELINE_OUT_DIR}/metadata_mapped.csv" \
+      --location_mapping_file="${PIPELINE_BIN_DIR}/../static_data/mappings/mapped_locations.csv" \
+      --metadata_file="${PIPELINE_BIN_DIR}/../static_data/mappings/metadata_mapped.csv" \
       --input_file="${source_tmp_dir}/processed_data.json.lz4" \
       --output_file_pattern="${source_out_dir}/processed_rows.#.json.gz" \
       --ignore_missing_canonical_match \

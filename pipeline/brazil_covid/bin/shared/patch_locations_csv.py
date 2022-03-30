@@ -2,6 +2,7 @@
 # Update the pre-matching locations.csv file for certain sources to find the correct
 # canonical hierarchy based on the Municipality Code that is stored in the Municipality
 # column for that source.
+from collections import defaultdict
 import csv
 import sys
 
@@ -12,11 +13,27 @@ from log import LOG
 from util.file.file_config import FileConfig, FilePattern, validate_file_configs
 
 
+# This is a bit of a hack because it does not enforce the dictionary doesn't change, it
+# relies on the user not editing it. But this needed a hashable dictionary and it doesn't
+# change.
+class HashableDict(dict):
+    def __key(self):
+        return tuple((k, self[k]) for k in sorted(self))
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        # pylint: disable=protected-access
+        return self.__key() == other.__key()
+
+
 def process_source(unmatched_filename, matched_filename):
     # Map the "clean" field to the original "raw" fields that are needed when the
     # "fill dimension data" step tries to merge the matching results with the original
-    # output rows.
-    original_dimension_map = {}
+    # output rows. Due to fixes for missing municipality codes, multiple codes can map
+    # to the same canonical municipality so use a set here.
+    original_dimension_map = defaultdict(set)
     with open(unmatched_filename) as unmatched_file:
         reader = csv.DictReader(unmatched_file)
         for row in reader:
@@ -28,7 +45,7 @@ def process_source(unmatched_filename, matched_filename):
                 row_id_fields.append(row[clean_key])
 
             row_id = '__'.join(row_id_fields)
-            original_dimension_map[row_id] = result
+            original_dimension_map[row_id].add(HashableDict(result))
 
     # Read all the canonical matching rows and build what the new output row should be.
     output_rows = []
@@ -41,7 +58,9 @@ def process_source(unmatched_filename, matched_filename):
                 row[f'{DimensionFactoryType.clean_prefix}{dimension}']
                 for dimension in DimensionFactoryType.hierarchical_dimensions
             )
-            output_rows.append({**row, **original_dimension_map[row_id]})
+            # Create a new row per cleaned value this canonical maps to
+            for result in original_dimension_map[row_id]:
+                output_rows.append({**row, **result})
 
     # Replace the canonical matching file *in place* with our hacked update.
     with open(matched_filename, 'w') as matched_file:

@@ -7,7 +7,8 @@ source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 UPLOAD_FILE="${PIPELINE_TMP_DIR}/epi_data.csv"
 REMOTE_DESTINATION="s3/zenysis-br-covid-assets/public_downloads"
 
-SOURCES=('sivep' 'sinan' 'population' 'covid' 'mortality' 'confidence_interval' 'sim')
+STEP='upload_processed_files'
+SOURCES=($("${PIPELINE_SRC_ROOT}/data/pipeline/scripts/generate_pipeline_sources.py" ${STEP}))
 
 pids=()
 for cur_source in "${SOURCES[@]}" ; do

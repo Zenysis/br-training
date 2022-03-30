@@ -1,0 +1,21 @@
+#!/bin/bash -eu
+set -o pipefail
+
+source "${PIPELINE_UTILS_DIR}/bash/common.sh"
+
+pushd "${PIPELINE_FEED_DIR}" &> /dev/null
+
+rm -rf "${PIPELINE_FEED_DIR}/"cbo_*.csv
+rm -rf "${PIPELINE_FEED_DIR}/"short_occupation_*.csv
+rm -rf "${PIPELINE_FEED_DIR}/cbo94_to_cbo2002.csv"
+
+latest_cbo_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'cbo_titulo.csv')
+FetchFiles "${latest_cbo_dir}/"cbo_*.csv .
+
+latest_short_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'short_occupation_title.csv')
+FetchFiles "${latest_short_dir}/"short_occupation_*.csv .
+
+latest_conversion_dir=$(GetLatestDirectory 's3/zenysis-br-covid/sim' 'cbo94_to_cbo2002.csv')
+FetchFiles "${latest_conversion_dir}/cbo94_to_cbo2002.csv" .
+
+popd &> /dev/null

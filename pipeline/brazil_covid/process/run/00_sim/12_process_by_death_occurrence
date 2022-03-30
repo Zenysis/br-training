@@ -1,16 +1,16 @@
 #!/bin/bash -eu
 set -o pipefail
 
-# NOTE(abby): These steps consume a lot of RAM, use 11_ to ensure it doesn't run as
+# NOTE(abby): These steps consume a lot of RAM, use 12_ to ensure it doesn't run as
 # other process steps are running.
 source "${PIPELINE_UTILS_DIR}/bash/common.sh"
 
 SetupEnvForPyPy
 
 # Clean up old files from multiple runs.
-rm -f "${PIPELINE_TMP_DIR}"/locations_res_*.csv
-rm -f "${PIPELINE_TMP_DIR}"/fields_res_*.csv
-rm -f "${PIPELINE_TMP_DIR}"/processed_data_res_*.json.lz4
+rm -f "${PIPELINE_TMP_DIR}"/locations_ocor_*.csv
+rm -f "${PIPELINE_TMP_DIR}"/fields_ocor_*.csv
+rm -f "${PIPELINE_TMP_DIR}"/processed_data_ocor_*.json.lz4
 
 # Track background process IDs so that we can reliably capture exit code
 pids=()
@@ -22,10 +22,10 @@ for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
   "${PIPELINE_SRC_ROOT}/data/pipeline/scripts/process_csv.py" \
     --date 'date' \
     --enable_field_wildcards \
-    --prefix 'sim_residence_' \
+    --prefix 'sim_occurrence_' \
     --sourcename 'sim' \
     --rename_cols \
-      'CODMUNRES:MunicipalityName' \
+      'CODMUNOCOR:MunicipalityName' \
     --multi_value_dimensions \
       'CausesATitle:CausesATitle_0,CausesATitle_1,CausesATitle_2,CausesATitle_3' \
       'CausesAParent:CausesAParent_0,CausesAParent_1,CausesAParent_2,CausesAParent_3' \
@@ -59,9 +59,9 @@ for data_file in "${PIPELINE_TMP_DIR}"/sim_converted_*.csv.lz4 ; do
       'Causes2Category4:Causes2Category4_0,Causes2Category4_1,Causes2Category4_2,Causes2Category4_3,Causes2Category4_4,Causes2Category4_5' \
     --disable_rollup \
     --input="${data_file}" \
-    --output_locations="${PIPELINE_TMP_DIR}/locations_res_${count}.csv" \
-    --output_fields="${PIPELINE_TMP_DIR}/fields_res_${count}.csv" \
-    --output_rows="${PIPELINE_TMP_DIR}/processed_data_res_${count}.json.lz4" \
+    --output_locations="${PIPELINE_TMP_DIR}/locations_ocor_${count}.csv" \
+    --output_fields="${PIPELINE_TMP_DIR}/fields_ocor_${count}.csv" \
+    --output_rows="${PIPELINE_TMP_DIR}/processed_data_ocor_${count}.json.lz4" \
   | TagLines "$(basename "${data_file}")" &
   pids+=("$!")
 

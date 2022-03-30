@@ -7,4 +7,6 @@ set -o pipefail
   --datasource_name_file="${PIPELINE_TMP_DIR}/datasource_name" \
   --datasource_version_file="${PIPELINE_TMP_DIR}/datasource_version" \
   --min_data_date='1979-01-01' \
+  --partitioning_type='dynamic' \
+  --concurrent_subtasks 12 \
   --use_nested_json_format
