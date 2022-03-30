@@ -1,4 +1,3 @@
-from config import settings
 from config.druid_base import FIELD_NAME
 from config.br_covid.aggregation import (
     DIMENSIONS,
@@ -6,6 +5,7 @@ from config.br_covid.aggregation import (
     GEO_TO_LATLNG_FIELD,
 )
 from config.br_covid.datatypes import BaseRowType
+import global_config
 
 
 def build_druid_dimensions():
@@ -40,4 +40,4 @@ UNFILTERABLE_DIMENSIONS = [d for pieces in GEO_TO_LATLNG_FIELD.values() for d in
 # Extra metrics to compute during druid indexing
 EXTRA_METRICS = []
 
-DRUID_HOST = settings.AWS_DRUID_HOST
+DRUID_HOST = global_config.DEFAULT_DRUID_HOST

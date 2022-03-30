@@ -12,6 +12,7 @@ class SharedPipelineStepType(Enum):
     MATCH_ENTITIES = 'match_entities'
     SUGGEST_MATCHES = 'suggest_matches'
     PATCH_LOCATIONS = 'patch_locations'
+    UPLOAD_PROCESSED_FILES = 'upload_processed_files'
 
 
 # By default, these steps are run for all pipeline sources. To add a pipeline step that is

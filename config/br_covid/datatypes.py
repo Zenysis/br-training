@@ -38,12 +38,16 @@ class Dimension:
     MOTHERS_AGE = 'MothersAge'
     SCHOOLING = 'Schooling'
     MOTHERS_SCHOOLING = 'MothersSchooling'
-    CAUSES_TITLE = 'CausesTitle'
-    CAUSES_PARENT = 'CausesParent'
-    CAUSES_CATEGORY_1 = 'CausesCategory1'
-    CAUSES_CATEGORY_2 = 'CausesCategory2'
-    CAUSES_CATEGORY_3 = 'CausesCategory3'
-    CAUSES_CATEGORY_4 = 'CausesCategory4'
+    OCCUPATION_TITLE = 'OccupationTitle'
+    OCCUPATION_FAMILY = 'OccupationFamily'
+    OCCUPATION_SUBGROUP = 'OccupationSubgroup'
+    OCCUPATION_PRINCIPAL_SUBGROUP = 'OccupationPrincipalSubgroup'
+    OCCUPATION_GROUP = 'OccupationGroup'
+    MOTHERS_OCCUPATION_TITLE = 'MothersOccupationTitle'
+    MOTHERS_OCCUPATION_FAMILY = 'MothersOccupationFamily'
+    MOTHERS_OCCUPATION_SUBGROUP = 'MothersOccupationSubgroup'
+    MOTHERS_OCCUPATION_PRINCIPAL_SUBGROUP = 'MothersOccupationPrincipalSubgroup'
+    MOTHERS_OCCUPATION_GROUP = 'MothersOccupationGroup'
     PLACE_OF_DEATH = 'PlaceOfDeath'
     MEDICAL_CARE = 'MedicalCare'
     IS_AUTOPSY = 'IsAutopsy'
@@ -57,6 +61,36 @@ class Dimension:
     GESTATION_WEEKS = 'GestationWeeks'
     PREGNANCY_KIND = 'PregnancyKind'
     MOMENT_OF_CHILDBIRTH = 'MomentOfChildbirth'
+    CAUSES_A_TITLE = 'CausesATitle'
+    CAUSES_A_PARENT = 'CausesAParent'
+    CAUSES_A_CATEGORY_1 = 'CausesACategory1'
+    CAUSES_A_CATEGORY_2 = 'CausesACategory2'
+    CAUSES_A_CATEGORY_3 = 'CausesACategory3'
+    CAUSES_A_CATEGORY_4 = 'CausesACategory4'
+    CAUSES_B_TITLE = 'CausesBTitle'
+    CAUSES_B_PARENT = 'CausesBParent'
+    CAUSES_B_CATEGORY_1 = 'CausesBCategory1'
+    CAUSES_B_CATEGORY_2 = 'CausesBCategory2'
+    CAUSES_B_CATEGORY_3 = 'CausesBCategory3'
+    CAUSES_B_CATEGORY_4 = 'CausesBCategory4'
+    CAUSES_C_TITLE = 'CausesCTitle'
+    CAUSES_C_PARENT = 'CausesCParent'
+    CAUSES_C_CATEGORY_1 = 'CausesCCategory1'
+    CAUSES_C_CATEGORY_2 = 'CausesCCategory2'
+    CAUSES_C_CATEGORY_3 = 'CausesCCategory3'
+    CAUSES_C_CATEGORY_4 = 'CausesCCategory4'
+    CAUSES_D_TITLE = 'CausesDTitle'
+    CAUSES_D_PARENT = 'CausesDParent'
+    CAUSES_D_CATEGORY_1 = 'CausesDCategory1'
+    CAUSES_D_CATEGORY_2 = 'CausesDCategory2'
+    CAUSES_D_CATEGORY_3 = 'CausesDCategory3'
+    CAUSES_D_CATEGORY_4 = 'CausesDCategory4'
+    CAUSES_2_TITLE = 'Causes2Title'
+    CAUSES_2_PARENT = 'Causes2Parent'
+    CAUSES_2_CATEGORY_1 = 'Causes2Category1'
+    CAUSES_2_CATEGORY_2 = 'Causes2Category2'
+    CAUSES_2_CATEGORY_3 = 'Causes2Category3'
+    CAUSES_2_CATEGORY_4 = 'Causes2Category4'
 
 
 class LocationTypeEnum(Enum):
@@ -97,7 +131,7 @@ BrazilCovidDimensionFactory = DimensionFactory(
 )
 
 BaseRowType = BaseRowFactory(
-    Dimension, HIERARCHICAL_DIMENSIONS, DIMENSION_PARENTS, NON_HIERARCHICAL_DIMENSIONS
+    Dimension, HIERARCHICAL_DIMENSIONS, DIMENSION_PARENTS
 )
 DimensionFactoryType = BrazilCovidDimensionFactory
 
