@@ -113,7 +113,7 @@ models/alchemy
 
 populate indicator tables
 
-`./scripts/db/postgres/dev/init_db.py br_covid —populate_indicators`
+`./scripts/db/postgres/dev/init_db.py br_covid --populate_indicators`
 
 
 
