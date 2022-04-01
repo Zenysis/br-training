@@ -175,7 +175,7 @@ $ ./scripts/create_user.py -f <first name> -l <last name> -u <email> -p <passwor
 ### Druid and config setup
 
 ​
-Specify druid host in global_config.py: `DEFAULT_DRUID_HOST = 'http://br-demo-druid.corp.clambda.com'`
+Specify druid host in global_config.py: `DEFAULT_DRUID_HOST = 'http://35.170.180.30:8888/unified-console.html'`
 ​
 
 ### Run webpack
