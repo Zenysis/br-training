@@ -162,22 +162,9 @@ We use [yarn](https://yarnpkg.com/) as a node.js package manager.
 `./scripts/db/postgres/dev/init_db.py <project name> --populate_indicators`
 
 6. Create a user for your local web app.
-   ​
 
 ```
-$ ./scripts/create_user --help
-​
-Arguments:
-​
--f first name
-​
--l last name
-​
--u email
-​
--p password
-​
--d postgresql://postgres:@localhost/{db_name}
+$ ./scripts/create_user.py -f <first name> -l <last name> -u <email> -p <password> -d <postgresql://postgres:@localhost/{db_name}>
 ```
 
 ### Start hasura
