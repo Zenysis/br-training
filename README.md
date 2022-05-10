@@ -213,9 +213,78 @@ The platform is built on [Flask](http://flask.palletsprojects.com/en/1.1.x/). To
 
 ## Production pipeline server setup
 
-On your pipeline server, go through the following steps in [Local development setup](#local-development-setup): [system requirements](#system-requirements), [source code](#source-code), [Python dependencies](#python-dependencies), and [Druid and config setup](#druid-and-config-setup).
+The pipeline server runs the data pipeline to generate datasources (typically, daily). These pipeline server setup instructions were developed for Linux/Ubuntu.
 
-Optionally, you may want to configure an automated task runner like GitLab, CircleCI, or Jenkins.
+1. Configure your server's users, firewall, etc. Sign in as root.
+2. Update system packages. 
+      ```
+      sudo apt-get update # updates available package version list
+      sudo apt-get upgrade # update packages
+      sudo apt-get autoremove # remove old packages
+      sudo do-release-upgrade # update os version
+      ```
+4. Install system dependencies.
+      ```
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install --no-install-recommends -y \
+       build-essential \
+       curl \
+       dtach \
+       freetds-bin \
+       freetds-dev \
+       git \
+       jq \
+       libffi-dev \
+       libgeos-dev \
+       libssl-dev \
+       lz4 \
+       lzop \
+       pigz \
+       python3 \
+       python3-dev \
+       python3-levenshtein \
+       python3-lxml \
+       python3-venv \
+       pypy3 \
+       pypy3-dev \
+       unzip \
+       wget \
+       libpq-dev \
+       gfortran \
+       libopenblas-dev \
+       liblapack-dev
+      apt-get clean 
+      rm -rf /var/lib/apt/lists/* 
+      curl \
+       -o /usr/local/bin/mc \
+       https://dl.min.io/client/mc/release/linux-amd64/archive/mc.RELEASE.2021-11-16T20-37-36Z
+      chmod 755 /usr/local/bin/mc
+      ```
+      (You may not need to install minio depending on your cloud storage choices.)
+6. Clone your fork of the Harmony repo.
+      `git clone <URL of Harmony clone>`
+8. cd into the Harmony source directory and create two Python virtual environments. One is for regular python, one for pypy (which has a faster runtime and may be used for pipelines). 
+      ```
+      # First set up the normal python3 venv
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip setuptools
+      pip install -r requirements.txt
+      pip install -r requirements-pipeline.txt
+      pip install -r requirements-web.txt
+      pip install -r requirements-dev.txt
+
+      # Second set up the pypy venv
+      deactivate
+      pypy3 -m venv venv_pypy3
+      source venv_pypy3/bin/activate
+      pip install --upgrade pip setuptools
+      pip install -r requirements.txt
+      pip install -r requirements-pipeline.txt
+      ```
+10. Configure necessary permissions for your cloud storage service. For example, if you're using Minio, you'll need to set up `~/.mc/config` on the server.
+11. Optionally, you may want to configure an automated task runner like GitLab, CircleCI, or Jenkins (to automate pipeline runs).
 
 ## Production Postgres server setup
 
