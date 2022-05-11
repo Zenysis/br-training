@@ -4,16 +4,17 @@
 
 Server/environment setup:
 
-2. [Local development setup](#local-development-setup)
-3. [Production pipeline server setup](#production-pipeline-server-setup)
-4. [Production PostgreSQL server setup](#production-postgres-server-setup)
-5. [Production web server setup](#production-web-server-setup)
-6. [Production Druid server setup](#production-druid-server-setup)
+2. [Project setup](#project-initialization)
+3. [Local development setup](#local-development-setup)
+4. [Production pipeline server setup](#production-pipeline-server-setup)
+5. [Production PostgreSQL server setup](#production-postgres-server-setup)
+6. [Production web server setup](#production-web-server-setup)
+7. [Production Druid server setup](#production-druid-server-setup)
 
 Code base customization
 
-7. [Writing integrations](#writing-integrations)
-8. [Customization](#customization)
+8. [Writing integrations](#writing-integrations)
+9. [Contributions](#contributions)
 
 ## Harmony overview
 
@@ -23,6 +24,40 @@ Harmony is an analytical platform that consists of two parts:
 - A pipeline for ingesting incompatible data streams and transforming them into a standard, joinable format.
 
 Data pipelines tend to run regularly and extract data from all sorts of data systems, ranging from Excel spreadsheets to custom SQL databases. After processing, data is dumped into a [Druid](https://druid.apache.org) database and then queried by the frontend.
+
+## Project initialization
+
+We refer to Harmony setups as "deployments". Each deployment has its own databases, data sources, and is hosted separately. 
+
+The next step in setting up your Harmony project is to configure its deployment. Configurations are created in the `config/` directory. There is a configuration template in `config/template` and an example configuration in `config/br`. Typically, configuration directories are named after two or three-letter project codes. You'll now need to choose a project code and create your own configuration directory.
+
+
+**Creating a new configuration**
+
+To create a new configuration, copy the `config/template` directory into a new directory named for your project code.
+
+At minimum, the following configuration files must be updated (documentation inside the files provides instructions):
+- Define global constants in `global_config.py`
+- Customize basic settings (e.g. site name) in `config/<project code>/general.py` and `config/<project code>/ui.py`
+
+After you have written your first data integration (see [writing integrations](#writing-integrations)):
+- Create dimensions for querying in `datatypes.py`
+- Customize aggregation options in `aggregation.py`
+- Add indicators based on the field ids you created in the pipeline step 
+
+We are working on making this customization easier (and configurable from a frontend) in future releases.
+
+**Misc. notes**
+
+- Some of the config variables require your Druid and PostreSQL hosts to be set up. See [Production PostgreSQL server setup](#production-postgres-server-setup) and [Production Druid server setup](#production-druid-server-setup).
+
+- When you run a script or the web server, select a configuration by setting the `ZEN_ENV` environmental variable. This environmental variable maps directly to folder names in `config/`, and will cause the `config` module to export the contents of that particular configuration.
+
+      Say there is configuration directory named `usa`. We can specify that configuration with the following:
+
+      ```bash
+      export ZEN_ENV='usa'
+      ```
 
 ## Local development setup
 
@@ -35,7 +70,7 @@ Operating systems supported by this documentation:
 
 ### Note: running only the pipeline code locally
 
-If you are exclusively interested in running the pipeline locally, and not the web server, only the following steps are necessary: [system requirements](#system-requirements), [source code](#source-code), [Python dependencies](#python-dependencies), and [Druid and config setup](#druid-and-config-setup).
+If you are exclusively interested in running the pipeline locally, and not the web server, only the following steps are necessary: [system requirements](#system-requirements), [source code](#source-code), [Python dependencies](#python-dependencies), and [Druid setup](#druid-setup).
 
 ### System requirements
 
@@ -116,47 +151,11 @@ We use [yarn](https://yarnpkg.com/) as a node.js package manager.
 3. `yarn install` will install everything in `package.json`.
    ​
 
-### Druid and config setup
+### Druid setup
 
 ​
 Specify druid host in `global_config.py`: `DEFAULT_DRUID_HOST = '<public production Druid server IP>'`
 
----
-
-We refer to Harmony setups as "deployments". Each deployment has its own databases, data sources, and is hosted separately.
-
-The next step in setting up Harmony is to configure its deployment. Configurations are created in the `config/` directory. There is a basic configuration in `config/template`. Usually configuration directories are named after two or three-letter country codes. In order to run the web server, you'll need to create your own configuration directory.
-
-**Choosing a configuration**
-
-When you run a script or the web server, select a configuration by setting the `ZEN_ENV` environmental variable. This environmental variable maps directly to folder names in `config/`, and will cause the `config` module to export the contents of that particular configuration.
-
-Suppose we had a configuration directory named `usa`. We can specify that configuration with the following:
-
-```bash
-export ZEN_ENV='usa'
-```
-
-In our code, top-level config imports will provide the U.S. configuration:
-
-```bash
->>> from config.ui import FULL_PLATFORM_NAME
->>> FULL_PLATFORM_NAME
-'US Demo'
-```
-
-**Creating a new configuration**
-
-To create a new configuration, copy the `config/template` directory into a new directory.
-
-There are many options you can explore, but at a minimum you should start with the following:
-
-- Customize basic settings (e.g. site name) in `general.py`
-- Create dimensions for querying in `datatypes.py`
-- Customize aggregation options in `aggregation.py`
-- Add indicators based on the field ids you created in the pipeline step (see `indicator_groups/demo/demo.py` for example)
-
-There is a lot that goes into configuration and customization of a Harmony deployment. We are working on making this easier to use (and configurable from a frontend) in future releases.
 
 ### PostgreSQL
 
@@ -393,7 +392,7 @@ There is more to learn about the CSV processor - it supports a variety of format
 
 When calling process_csv, you must specify the `date` column, the `sourcename` (a label for your datasource), and the `prefix` for all indicators produced (usually the name of your datasource or some other informative tag). You will also have to specify some input and output files. You can call `process_csv` from your Python pipeline scripts directly, or invoke it on the command line.
 
-## Customization
+## Contributions
 
 Contributions are welcome! Use Github's Issues and Pull Requests features to report bugs, plan features, or submit changes.
 
