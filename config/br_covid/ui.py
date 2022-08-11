@@ -106,7 +106,7 @@ MAP_GEOJSON_LOCATION = (
 MAP_MAPBOX_ADMIN_URLS = {}
 
 # Mapbox access token.
-MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiaWFudyIsImEiOiJjaWY4dnNkeTIwOWMzczlseHVxZDJqNTM1In0.XIkCSEq_oLlAiXT5FfABFw'
+MAPBOX_ACCESS_TOKEN = ''
 
 # Static geo data locations.
 GEO_DATA_URL = ''
